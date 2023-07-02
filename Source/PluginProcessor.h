@@ -18,14 +18,14 @@ class Fifo
 {
     void resize(size_t size);
     void clear();
-    Type pull();
+    Type pull(int position);
     void push(Type& t);
 
 private:
     int index{ 0 };
     std::vector<Type, size_t> buffers;
 };
-
+//==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
@@ -68,6 +68,8 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+
+    Fifo<float> fifo;
 
 private:
     //==============================================================================

@@ -8,7 +8,37 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+//==============================================================================
+template <typename Type>
+void Fifo<Type>::clear()
+{
+    buffers.clear();
+    buffers.resize(0);
+    index = 0;
+}
 
+template <typename Type>
+void Fifo<Type>::resize(size_t size)
+{
+    buffers.clear();
+    buffers.resize(size);
+    index = 0;
+}
+
+template <typename Type>
+void Fifo<Type>::push(Type& t)
+{
+    if (index == buffers.size()) { index = 0; }
+    buffers[index] = t;
+    ++index;
+}
+
+template <typename Type>
+Type Fifo<Type>::pull(int position)
+{
+    if (position >= buffers.size()) { return 0; }
+    return buffers[position];
+}
 //==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
