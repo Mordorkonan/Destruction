@@ -13,6 +13,21 @@
 //==============================================================================
 /**
 */
+template <typename Type, size_t size>
+class Fifo
+{
+    size_t getSize() noexcept;
+    void prepare(int numSamples, int numChannels);
+    int getNumAvailableForReading() const;
+    int getAvailableSpace() const;
+    bool pull(Type& t);
+    bool push(const Type& t);
+
+private:
+    juce::AbstractFifo fifo{ size };
+    std::array<Type, size> buffers;
+};
+//==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
@@ -55,6 +70,8 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+
+    Fifo<float, 256> fifo;
 
 private:
     //==============================================================================

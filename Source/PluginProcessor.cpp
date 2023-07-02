@@ -8,18 +8,59 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+//==============================================================================
+template <typename Type, size_t size>
+size_t Fifo<Type, size>::getSize() { return size; }
 
+template <typename Type, size_t size>
+void Fifo<Type, size>::prepare(int numSamples, int numChannels)
+{
+    for (auto& buffer : buffers)
+    {
+        buffer.setSize(numChannels, numSamples, false, true, false);
+        buffer.clear();
+    }    
+}
+
+template <typename Type, size_t size>
+bool Fifo<Type, size>::pull(Type& t)
+{
+    auto readIndex = fifo.read();
+    if (readIndex.blockSize1 > 0)
+    {
+        t = buffers[readIndex.startIndex1];
+        return true;
+    }
+    else { return false; }
+}
+
+template <typename Type, size_t size>
+bool Fifo<Type, size>::push(const Type& t)
+{
+    auto writeIndex = fifo.write();
+    if (writeIndex.blockSize1 > 0)
+    {
+        buffers[writeIndex.startIndex1] = t;
+        return true;
+    }
+    else { return false; }
+}
+
+template <typename Type, size_t size>
+int Fifo<Type, size>::getNumAvailableForReading() const
+{
+    return fifo.getNumReady();
+}
+
+template <typename Type, size_t size>
+int Fifo<Type, size>::getAvailableSpace() const
+{
+    return fifo.getFreeSpace();
+}
 //==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+     : AudioProcessor (BusesProperties())
 #endif
 {
 }
@@ -144,17 +185,9 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    for (int i = 0; i < buffer.getNumChannels(); ++i)
     {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
+        
     }
 }
 
