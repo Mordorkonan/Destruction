@@ -9,32 +9,32 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 //==============================================================================
-template <typename Type>
-void Fifo<Type>::clear()
+template <typename Type, size_t size>
+void Fifo<Type, size>::clear()
 {
     buffers.clear();
     buffers.resize(0);
     index = 0;
 }
 
-template <typename Type>
-void Fifo<Type>::resize(size_t size)
+template <typename Type, size_t size>
+void Fifo<Type, size>::resize(size_t size)
 {
     buffers.clear();
     buffers.resize(size);
     index = 0;
 }
 
-template <typename Type>
-void Fifo<Type>::push(Type& t)
+template <typename Type, size_t size>
+void Fifo<Type, size>::push(Type& t)
 {
     if (index == buffers.size()) { index = 0; }
     buffers[index] = t;
     ++index;
 }
 
-template <typename Type>
-Type Fifo<Type>::pull(int position)
+template <typename Type, size_t size>
+Type Fifo<Type, size>::pull(int position)
 {
     if (position >= buffers.size()) { return 0; }
     return buffers[position];

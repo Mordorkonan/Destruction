@@ -13,7 +13,7 @@
 //==============================================================================
 /**
 */
-template <typename Type>
+template <typename Type, size_t size>
 class Fifo
 {
     void resize(size_t size);
@@ -23,7 +23,7 @@ class Fifo
 
 private:
     int index{ 0 };
-    std::vector<Type, size_t> buffers;
+    std::vector<Type, size_t> buffers{ size };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
