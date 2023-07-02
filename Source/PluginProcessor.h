@@ -69,7 +69,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    Fifo<float> fifo;
+    Fifo<float, 256> fifo;
 
 private:
     //==============================================================================
