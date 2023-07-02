@@ -13,6 +13,19 @@
 //==============================================================================
 /**
 */
+template <typename Type>
+class Fifo
+{
+    void resize(size_t size);
+    void clear();
+    Type pull();
+    void push(Type& t);
+
+private:
+    int index{ 0 };
+    std::vector<Type, size_t> buffers;
+};
+
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
