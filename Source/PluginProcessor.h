@@ -16,14 +16,16 @@
 template <typename Type, size_t size>
 class Fifo
 {
-    void resize(size_t size);
-    void clear();
-    Type pull(int position);
-    void push(Type& t);
+    size_t getSize() noexcept;
+    void prepare(int numSamples, int numChannels);
+    int getNumAvailableForReading() const;
+    int getAvailableSpace() const;
+    bool pull(Type& t);
+    bool push(const Type& t);
 
 private:
-    int index{ 0 };
-    std::vector<Type, size_t> buffers{ size };
+    juce::AbstractFifo fifo{ size };
+    std::array<Type, size> buffers;
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
