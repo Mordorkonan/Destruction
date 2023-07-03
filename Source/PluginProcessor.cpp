@@ -60,7 +60,14 @@ int Fifo<Type, size>::getAvailableSpace() const
 //==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties())
+        : AudioProcessor(BusesProperties()
+    #if ! JucePlugin_IsMidiEffect
+        #if ! JucePlugin_IsSynth
+                .withInput("Input", juce::AudioChannelSet::stereo(), true)
+        #endif
+            .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+    #endif
+        )
 #endif
 {
 }
@@ -144,7 +151,7 @@ void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samples
         osc.prepare(oscSpec);
         osc.setFrequency(220.0f);
         gain.prepare(oscSpec);
-        gain.setGainDecibels(-6.0f);
+        gain.setGainDecibels(-18.0f);
     #endif
 }
 
