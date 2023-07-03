@@ -10,7 +10,7 @@
 #include "PluginEditor.h"
 //==============================================================================
 template <typename Type, size_t size>
-size_t Fifo<Type, size>::getSize() { return size; }
+size_t Fifo<Type, size>::getSize() noexcept { return size; }
 
 template <typename Type, size_t size>
 void Fifo<Type, size>::prepare(int numSamples, int numChannels)
@@ -25,7 +25,7 @@ void Fifo<Type, size>::prepare(int numSamples, int numChannels)
 template <typename Type, size_t size>
 bool Fifo<Type, size>::pull(Type& t)
 {
-    auto readIndex = fifo.read();
+    auto readIndex = fifo.read(1);
     if (readIndex.blockSize1 > 0)
     {
         t = buffers[readIndex.startIndex1];
@@ -37,7 +37,7 @@ bool Fifo<Type, size>::pull(Type& t)
 template <typename Type, size_t size>
 bool Fifo<Type, size>::push(const Type& t)
 {
-    auto writeIndex = fifo.write();
+    auto writeIndex = fifo.write(1);
     if (writeIndex.blockSize1 > 0)
     {
         buffers[writeIndex.startIndex1] = t;
@@ -134,8 +134,16 @@ void DistortionTestAudioProcessor::changeProgramName (int index, const juce::Str
 //==============================================================================
 void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    fifo.prepare(samplesPerBlock, getNumInputChannels());
+    #if OSC
+        juce::dsp::ProcessSpec oscSpec;
+        oscSpec.maximumBlockSize = samplesPerBlock;
+        oscSpec.numChannels = getNumInputChannels();
+        oscSpec.sampleRate = sampleRate;
+        osc.initialise([](float x) { return std::sin(x); });
+        osc.prepare(oscSpec);
+        osc.setFrequency(220.0f);
+    #endif
 }
 
 void DistortionTestAudioProcessor::releaseResources()
@@ -176,19 +184,18 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
+#if OSC
+    auto numSamples = buffer.getNumSamples();
+    buffer.clear();
+    for (int i = 0; i < numSamples; ++i)
     {
-        
+        auto sample = osc.processSample(0);
+        auto sample2 = osc.processSample(0);
+        buffer.setSample(0, i, sample);
+        buffer.setSample(1, i, sample2);
     }
+#endif
+    fifo.push(buffer);
 }
 
 //==============================================================================
