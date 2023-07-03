@@ -10,12 +10,14 @@
 
 #include <JuceHeader.h>
 
+#define OSC true
 //==============================================================================
 /**
 */
 template <typename Type, size_t size>
 class Fifo
 {
+public:
     size_t getSize() noexcept;
     void prepare(int numSamples, int numChannels);
     int getNumAvailableForReading() const;
@@ -71,9 +73,14 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    Fifo<float, 256> fifo;
+    Fifo<juce::AudioBuffer<float>, 256> fifo;
 
 private:
+#if OSC
+    juce::dsp::Oscillator<float> osc;
+    juce::dsp::Gain<float> gain;
+#endif // OSC
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)
 };
