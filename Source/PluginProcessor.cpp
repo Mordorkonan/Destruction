@@ -143,6 +143,8 @@ void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samples
         osc.initialise([](float x) { return std::sin(x); });
         osc.prepare(oscSpec);
         osc.setFrequency(220.0f);
+        gain.prepare(oscSpec);
+        gain.setGainDecibels(-6.0f);
     #endif
 }
 
@@ -183,18 +185,20 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-#if OSC
-    auto numSamples = buffer.getNumSamples();
-    buffer.clear();
-    for (int i = 0; i < numSamples; ++i)
-    {
-        auto sample = osc.processSample(0);
-        auto sample2 = osc.processSample(0);
-        buffer.setSample(0, i, sample);
-        buffer.setSample(1, i, sample2);
-    }
-#endif
+    #if OSC
+        auto numSamples = buffer.getNumSamples();
+        buffer.clear();
+        for (int i = 0; i < numSamples; ++i)
+        {
+            auto sample = osc.processSample(0);
+            auto sample2 = osc.processSample(0);
+            buffer.setSample(0, i, sample);
+            buffer.setSample(1, i, sample2);
+        }
+        auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
+        auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
+        gain.process(gainContext);
+    #endif
     fifo.push(buffer);
 }
 

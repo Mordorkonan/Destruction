@@ -78,6 +78,7 @@ public:
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
+    juce::dsp::Gain<float> gain;
 #endif // OSC
 
     //==============================================================================
