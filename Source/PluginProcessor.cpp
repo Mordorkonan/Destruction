@@ -203,7 +203,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             buffer.setSample(1, i, sample2);
         }
     #endif
-    gain.setGainDecibels(gainLevelInDecibels);
+    gain.setGainDecibels(controllerLayout.getGainLevelInDecibels());
     auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
     auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
     gain.process(gainContext);
@@ -235,8 +235,11 @@ void DistortionTestAudioProcessor::setStateInformation (const void* data, int si
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
+//==============================================================================
+void ControllerLayout::setGainLevelInDecibels(const double& value) { gainLevelInDecibels = value; }
 
-void DistortionTestAudioProcessor::setGainLevelInDecibels(const double& value) { gainLevelInDecibels = value; }
+
+double ControllerLayout::getGainLevelInDecibels() const { return gainLevelInDecibels; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

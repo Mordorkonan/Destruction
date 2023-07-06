@@ -11,7 +11,6 @@
 #include <JuceHeader.h>
 
 #define OSC true
-//==============================================================================
 /**
 */
 template <typename Type, size_t size>
@@ -28,6 +27,15 @@ public:
 private:
     juce::AbstractFifo fifo{ size };
     std::array<Type, size> buffers;
+};
+//==============================================================================
+class ControllerLayout
+{
+public:
+    void setGainLevelInDecibels(const double& value);
+    double getGainLevelInDecibels() const;
+private:
+    double gainLevelInDecibels{ -18.0 };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
@@ -74,16 +82,15 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    void setGainLevelInDecibels(const double& value);
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
+    ControllerLayout controllerLayout;
 
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
 #endif // OSC
     juce::dsp::Gain<float> gain;
-    double gainLevelInDecibels{ -18.0 };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)

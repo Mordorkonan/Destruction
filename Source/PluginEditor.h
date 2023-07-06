@@ -25,7 +25,8 @@ public:
     void resized() override;
 
 private:
-    juce::Slider gainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag, juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+    juce::Slider gainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+                             juce::Slider::TextEntryBoxPosition::TextBoxBelow };
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DistortionTestAudioProcessor& audioProcessor;

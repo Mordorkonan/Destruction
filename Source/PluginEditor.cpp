@@ -17,7 +17,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     // editor's size to whatever you need it to be.
     setSize (400, 300);
 
-    gainSlider.onValueChange = [this]() { audioProcessor.setGainLevelInDecibels(gainSlider.getValue()); };
+    gainSlider.onValueChange = [this]() { audioProcessor.controllerLayout.setGainLevelInDecibels(gainSlider.getValue()); };
     juce::Slider::RotaryParameters rotaryParameters;
     rotaryParameters.startAngleRadians = juce::MathConstants<float>::twoPi - 3 * 0.25 * juce::MathConstants<float>::pi;
     rotaryParameters.endAngleRadians = juce::MathConstants<float>::twoPi + 3 * 0.25 * juce::MathConstants<float>::pi;
