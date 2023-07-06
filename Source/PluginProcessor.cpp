@@ -142,17 +142,17 @@ void DistortionTestAudioProcessor::changeProgramName (int index, const juce::Str
 void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     fifo.prepare(samplesPerBlock, getNumInputChannels());
+        juce::dsp::ProcessSpec spec;
+        spec.maximumBlockSize = samplesPerBlock;
+        spec.numChannels = getNumInputChannels();
+        spec.sampleRate = sampleRate;
     #if OSC
-        juce::dsp::ProcessSpec oscSpec;
-        oscSpec.maximumBlockSize = samplesPerBlock;
-        oscSpec.numChannels = getNumInputChannels();
-        oscSpec.sampleRate = sampleRate;
         osc.initialise([](float x) { return std::sin(x); });
-        osc.prepare(oscSpec);
+        osc.prepare(spec);
         osc.setFrequency(220.0f);
-        gain.prepare(oscSpec);
-        gain.setGainDecibels(-18.0f);
     #endif
+        gain.prepare(spec);
+        gain.setGainDecibels(-18.0f);
 }
 
 void DistortionTestAudioProcessor::releaseResources()
@@ -202,11 +202,13 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             buffer.setSample(0, i, sample);
             buffer.setSample(1, i, sample2);
         }
-        auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
-        auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
-        gain.process(gainContext);
     #endif
+    gain.setGainDecibels(controllerLayout.getGainLevelInDecibels());
+    auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
+    auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
+    gain.process(gainContext);
     fifo.push(buffer);
+
 }
 
 //==============================================================================
@@ -233,7 +235,11 @@ void DistortionTestAudioProcessor::setStateInformation (const void* data, int si
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
+//==============================================================================
+void ControllerLayout::setGainLevelInDecibels(const double& value) { gainLevelInDecibels = value; }
 
+
+double ControllerLayout::getGainLevelInDecibels() const { return gainLevelInDecibels; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

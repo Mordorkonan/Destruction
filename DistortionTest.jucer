@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="DH74Fn" name="DistortionTest" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAAX,buildAU,buildStandalone,buildVST3">
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAAX,buildAU,buildStandalone,buildVST3"
+              companyName="MordorkonanTestCompany">
   <MAINGROUP id="y6MT15" name="DistortionTest">
     <GROUP id="{71C368AF-64EB-9DA7-7C8D-7E3B8A87F80F}" name="Source">
       <FILE id="Va5hZy" name="PluginProcessor.cpp" compile="1" resource="0"
