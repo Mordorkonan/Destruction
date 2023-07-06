@@ -73,13 +73,17 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //==============================================================================
+    void setGainLevelInDecibels(const double& value);
+
     Fifo<juce::AudioBuffer<float>, 256> fifo;
 
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
-    juce::dsp::Gain<float> gain;
 #endif // OSC
+    juce::dsp::Gain<float> gain;
+    double gainLevelInDecibels{ -18.0 };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)
