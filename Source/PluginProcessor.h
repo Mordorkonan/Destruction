@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 
-#define OSC true
+#define OSC false
 /**
 */
 template <typename Type, size_t size>
@@ -28,6 +28,33 @@ private:
     juce::AbstractFifo fifo{ size };
     std::array<Type, size> buffers;
 };
+//==============================================================================
+template <typename SampleType>
+class Clipper
+    /*Базовый класс, предназначенный для модернизации различными
+    типами клипперов, такими как Hard, Soft, Sine, Triangle, Foldback.
+    Имеет чистую виртуальную функцию process, требующую переопределения
+    наследованным классом.*/
+{
+public:
+    virtual ~Clipper() { }
+    virtual SampleType processHardClipping(SampleType& sample) = 0;
+
+    void updateMultiplier(SampleType newValue) { multiplier = newValue; }
+protected:
+    SampleType multiplier;
+};
+//==============================================================================
+template <typename SampleType>
+class HardClipper : public Clipper<SampleType>
+{
+public:
+    SampleType processHardClipping(SampleType& sample) override
+    {
+        return juce::jlimit<float>(-1.0f, 1.0f, sample * multiplier);
+    }
+};
+
 //==============================================================================
 class ControllerLayout
 {
@@ -85,6 +112,7 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
+    HardClipper<float> hardClipper;
 
 private:
 #if OSC
