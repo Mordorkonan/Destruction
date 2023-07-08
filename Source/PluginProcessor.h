@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 
-#define OSC true
+#define OSC false
 /**
 */
 template <typename Type, size_t size>
@@ -29,9 +29,24 @@ private:
     std::array<Type, size> buffers;
 };
 //==============================================================================
+template <typename SampleType>
+class HardClipper
+{
+public:
+    SampleType processHardClipping(SampleType& sample)
+    {
+        return juce::jlimit<float>(-1.0f, 1.0f, sample * multiplier);
+    }
+    void updateMultiplier(SampleType newValue) { multiplier = newValue; }
+private:
+    SampleType multiplier;
+};
+
+//==============================================================================
 class ControllerLayout
 {
 public:
+    void processHardClipping();
     void setGainLevelInDecibels(const double& value);
     double getGainLevelInDecibels() const;
 private:
@@ -85,6 +100,7 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
+    HardClipper<float> hardClipper;
 
 private:
 #if OSC

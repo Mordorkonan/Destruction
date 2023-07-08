@@ -203,6 +203,19 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             buffer.setSample(1, i, sample2);
         }
     #endif
+    auto numOfSamples = buffer.getNumSamples();
+    auto numOfChannels = buffer.getNumChannels();
+    float* sample = new float(0.0f);
+    for (int i = 0; i < numOfChannels; ++i)
+    {
+        for (int j = 0; j < numOfSamples; ++j)
+        {
+            *sample = buffer.getSample(i, j);
+            buffer.setSample(i, j, hardClipper.processHardClipping(*sample));
+        }
+    }
+    delete sample;
+    sample = nullptr;
     gain.setGainDecibels(controllerLayout.getGainLevelInDecibels());
     auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
     auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
@@ -237,7 +250,6 @@ void DistortionTestAudioProcessor::setStateInformation (const void* data, int si
 }
 //==============================================================================
 void ControllerLayout::setGainLevelInDecibels(const double& value) { gainLevelInDecibels = value; }
-
 
 double ControllerLayout::getGainLevelInDecibels() const { return gainLevelInDecibels; }
 //==============================================================================
