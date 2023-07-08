@@ -216,7 +216,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     }
     delete sample;
     sample = nullptr;
-    gain.setGainDecibels(controllerLayout.getGainLevelInDecibels());
+    gain.setGainDecibels(static_cast<float>(controllerLayout.getGainLevelInDecibels()));
     auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
     auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
     gain.process(gainContext);

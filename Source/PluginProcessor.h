@@ -30,23 +30,35 @@ private:
 };
 //==============================================================================
 template <typename SampleType>
-class HardClipper
+class Clipper
+    /*Базовый класс, предназначенный для модернизации различными
+    типами клипперов, такими как Hard, Soft, Sine, Triangle, Foldback.
+    Имеет чистую виртуальную функцию process, требующую переопределения
+    наследованным классом.*/
 {
 public:
-    SampleType processHardClipping(SampleType& sample)
+    virtual ~Clipper() { }
+    virtual SampleType processHardClipping(SampleType& sample) = 0;
+
+    void updateMultiplier(SampleType newValue) { multiplier = newValue; }
+protected:
+    SampleType multiplier;
+};
+//==============================================================================
+template <typename SampleType>
+class HardClipper : public Clipper<SampleType>
+{
+public:
+    SampleType processHardClipping(SampleType& sample) override
     {
         return juce::jlimit<float>(-1.0f, 1.0f, sample * multiplier);
     }
-    void updateMultiplier(SampleType newValue) { multiplier = newValue; }
-private:
-    SampleType multiplier;
 };
 
 //==============================================================================
 class ControllerLayout
 {
 public:
-    void processHardClipping();
     void setGainLevelInDecibels(const double& value);
     double getGainLevelInDecibels() const;
 private:
