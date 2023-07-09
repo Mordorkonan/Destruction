@@ -66,7 +66,38 @@ public:
         return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample), updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
     }
 private:    
-    double correctMultiplier() { return (1.25 * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
+    double correctMultiplier() { return (correctionCoefficient * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
+    double correctionCoefficient{ 1.25 };
+};
+//==============================================================================
+template <typename SampleType>
+class FoldbackClipper : public Clipper<SampleType>
+{
+public:
+    SampleType process(SampleType& sample) override
+    {
+        auto updatedSample = [this](SampleType sample) -> double
+        { return (std::atan(static_cast<double>(sample) * correctMultiplier())); };
+        if (std::abs(updatedSample(sample)) >= kneeThreshold)
+        {
+            foldbackMultiplier.reset(new double{ juce::jmap<double>(std::abs(updatedSample(sample)),
+                                                                    kneeThreshold,
+                                                                    1.0,
+                                                                    1.0,
+                                                                    //static_cast<double>(std::abs(sample)) * static_cast<double>(multiplier)) });
+                                                                    static_cast<double>(std::abs(sample)) * correctMultiplier()) });
+        }
+        else foldbackMultiplier.reset(new double{ 1.0 });
+        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / *foldbackMultiplier, updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
+    }
+    double correctMultiplier()
+    {
+        double corrector{ static_cast<double>(JUCE_LIVE_CONSTANT(10)) / 10.0 }; // диапазон 0.2 до 0.7, больше не нужно
+        return corrector * static_cast<double>(multiplier) - (corrector - 0.5);
+    }
+private:
+    double kneeThreshold{ 0.5 };
+    std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
 class ControllerLayout
@@ -126,7 +157,7 @@ public:
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
     //HardClipper<float> clipper;
-    SoftClipper<float> clipper;
+    FoldbackClipper<float> clipper;
 
 private:
 #if OSC
