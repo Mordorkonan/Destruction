@@ -106,7 +106,7 @@ public:
                                                           1.0));
     }
 private:
-    double kneeThreshold{ 0.5 };
+    double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
     std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
