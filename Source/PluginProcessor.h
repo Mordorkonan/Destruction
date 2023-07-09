@@ -61,9 +61,7 @@ class SoftClipper : public Clipper<SampleType>
 public:
     SampleType process(SampleType& sample) override
     {
-        // числовые значения это коррекция изгиба передаточной функции
         auto updatedSample = [this](SampleType sample) -> double
-            //{ return (4.0 * std::atan(static_cast<double>(sample) * correctMultiplier() * 0.25)); };
             { return (std::atan(static_cast<double>(sample) * correctMultiplier())); };
         return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample), updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
     }
