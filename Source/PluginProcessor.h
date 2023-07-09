@@ -37,21 +37,29 @@ class Clipper
     наследованным классом.*/
 {
 public:
+    Clipper(double&& corrCoef = 1.0) : correctionCoefficient(corrCoef) { }
     virtual ~Clipper() { }
     virtual SampleType process(SampleType& sample) = 0;
-
     void updateMultiplier(SampleType newValue) { multiplier = newValue; }
 protected:
+    double correctMulti() { return correctionCoefficient * static_cast<double>(multiplier) - correctionOffset; }
     SampleType multiplier;
+    /*корректирующие коэффициенты задают интенсивность влияния
+    параметра multiplier на обработку. При этом значение вывода
+    функции correctMulti() должно быть равно 0.5 при multiplier = 1,
+    для соблюдения линейности участка передаточной функции.*/    
+    double correctionCoefficient;
+    double correctionOffset{ correctionCoefficient - 0.5 };
 };
 //==============================================================================
 template <typename SampleType>
 class HardClipper : public Clipper<SampleType>
 {
 public:
+    HardClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        return juce::jlimit<float>(-1.0f, 1.0f, sample * multiplier);
+        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier);
     }
 };
 //==============================================================================
@@ -59,6 +67,7 @@ template <typename SampleType>
 class SoftClipper : public Clipper<SampleType>
 {
 public:
+    SoftClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
@@ -66,14 +75,14 @@ public:
         return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample), updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
     }
 private:    
-    double correctMultiplier() { return (correctionCoefficient * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
-    double correctionCoefficient{ 1.25 };
+    double correctMultiplier() { return (1.25 * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
 };
 //==============================================================================
 template <typename SampleType>
 class FoldbackClipper : public Clipper<SampleType>
 {
 public:
+    FoldbackClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
@@ -156,8 +165,9 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    //HardClipper<float> clipper;
-    FoldbackClipper<float> clipper;
+    HardClipper<float> clipper{ 0.25 };
+    //SoftClipper<float> clipper{ 1.25 };
+    //FoldbackClipper<float> clipper{ 0.5 };
 
 private:
 #if OSC
