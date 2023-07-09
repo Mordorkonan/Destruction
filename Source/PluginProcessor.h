@@ -38,7 +38,7 @@ class Clipper
 {
 public:
     virtual ~Clipper() { }
-    virtual SampleType processHardClipping(SampleType& sample) = 0;
+    virtual SampleType process(SampleType& sample) = 0;
 
     void updateMultiplier(SampleType newValue) { multiplier = newValue; }
 protected:
@@ -49,12 +49,27 @@ template <typename SampleType>
 class HardClipper : public Clipper<SampleType>
 {
 public:
-    SampleType processHardClipping(SampleType& sample) override
+    SampleType process(SampleType& sample) override
     {
         return juce::jlimit<float>(-1.0f, 1.0f, sample * multiplier);
     }
 };
-
+//==============================================================================
+template <typename SampleType>
+class SoftClipper : public Clipper<SampleType>
+{
+public:
+    SampleType process(SampleType& sample) override
+    {
+        // числовые значения это коррекция изгиба передаточной функции
+        auto updatedSample = [this](SampleType sample) -> double
+            //{ return (4.0 * std::atan(static_cast<double>(sample) * correctMultiplier() * 0.25)); };
+            { return (std::atan(static_cast<double>(sample) * correctMultiplier())); };
+        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample), updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
+    }
+private:    
+    double correctMultiplier() { return (1.25 * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
+};
 //==============================================================================
 class ControllerLayout
 {
@@ -112,7 +127,8 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    HardClipper<float> hardClipper;
+    //HardClipper<float> clipper;
+    SoftClipper<float> clipper;
 
 private:
 #if OSC

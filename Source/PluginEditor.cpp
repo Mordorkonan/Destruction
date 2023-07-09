@@ -15,7 +15,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (600, 300);
 
     juce::Slider::RotaryParameters rotaryParameters;
     rotaryParameters.startAngleRadians = juce::MathConstants<float>::twoPi - 3 * 0.25f * juce::MathConstants<float>::pi;
@@ -30,7 +30,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.setRotaryParameters(rotaryParameters);
     clipSlider.setRange(1.0, 10.0);
     clipSlider.setValue(1.0);
-    clipSlider.onValueChange = [this]() { audioProcessor.hardClipper.updateMultiplier(static_cast<float>(clipSlider.getValue())); };
+    clipSlider.onValueChange = [this]() { audioProcessor.clipper.updateMultiplier(static_cast<float>(clipSlider.getValue())); };
     addAndMakeVisible(clipSlider);
 }
 

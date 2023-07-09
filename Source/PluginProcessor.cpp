@@ -211,7 +211,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         for (int j = 0; j < numOfSamples; ++j)
         {
             *sample = buffer.getSample(i, j);
-            buffer.setSample(i, j, hardClipper.processHardClipping(*sample));
+            buffer.setSample(i, j, clipper.process(*sample));
         }
     }
     delete sample;
