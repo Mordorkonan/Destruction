@@ -42,7 +42,6 @@ public:
     virtual SampleType process(SampleType& sample) = 0;
     void updateMultiplier(double newValue) { multiplier = correctionCoefficient * newValue - correctionOffset; }
 protected:
-    //SampleType multiplier;
     double multiplier;
     /*корректирующие коэффициенты задают интенсивность влияния
     параметра multiplier на обработку. При этом значение вывода
@@ -59,10 +58,10 @@ public:
     HardClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample * multiplier));
+        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier * levelCompensation);
     }
 private:
-    double correctionOffset{ correctionCoefficient - 1.0 };
+    double levelCompensation{ 2.0 }; // из-за отсутствия нормализации передаточной функции базовый уровень 0.5 множится на 2.
 };
 //==============================================================================
 template <typename SampleType>
@@ -163,9 +162,9 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    //HardClipper<float> clipper{ 0.25 };
+    HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
-    FoldbackClipper<float> clipper{ 0.5 };
+    //FoldbackClipper<float> clipper{ 0.5 };
 
 private:
 #if OSC
