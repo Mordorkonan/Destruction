@@ -30,7 +30,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.setRotaryParameters(rotaryParameters);
     clipSlider.setRange(1.0, 10.0);
     clipSlider.setValue(1.0);
-    clipSlider.onValueChange = [this]() { audioProcessor.clipper.updateMultiplier(static_cast<float>(clipSlider.getValue())); };
+    clipSlider.onValueChange = [this]() { audioProcessor.clipper.updateMultiplier(clipSlider.getValue()); };
     addAndMakeVisible(clipSlider);
 }
 

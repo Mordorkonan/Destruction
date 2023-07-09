@@ -40,10 +40,10 @@ public:
     Clipper(double&& corrCoef = 1.0) : correctionCoefficient(corrCoef) { }
     virtual ~Clipper() { }
     virtual SampleType process(SampleType& sample) = 0;
-    void updateMultiplier(SampleType newValue) { multiplier = newValue; }
+    void updateMultiplier(double newValue) { multiplier = correctionCoefficient * newValue - correctionOffset; }
 protected:
-    double correctMulti() { return correctionCoefficient * static_cast<double>(multiplier) - correctionOffset; }
-    SampleType multiplier;
+    //SampleType multiplier;
+    double multiplier;
     /*корректирующие коэффициенты задают интенсивность влияния
     параметра multiplier на обработку. При этом значение вывода
     функции correctMulti() должно быть равно 0.5 при multiplier = 1,
@@ -59,8 +59,10 @@ public:
     HardClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier);
+        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample * multiplier));
     }
+private:
+    double correctionOffset{ correctionCoefficient - 1.0 };
 };
 //==============================================================================
 template <typename SampleType>
@@ -71,11 +73,9 @@ public:
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
-            { return (std::atan(static_cast<double>(sample) * correctMultiplier())); };
+            { return (std::atan(static_cast<double>(sample) * multiplier)); };
         return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample), updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
     }
-private:    
-    double correctMultiplier() { return (1.25 * static_cast<double>(multiplier) - 0.75); } // усиление при multiplier = 1.0 будет 0,5, коррекция кривизны
 };
 //==============================================================================
 template <typename SampleType>
@@ -86,23 +86,21 @@ public:
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
-        { return (std::atan(static_cast<double>(sample) * correctMultiplier())); };
+            { return (std::atan(static_cast<double>(sample) * multiplier)); };
         if (std::abs(updatedSample(sample)) >= kneeThreshold)
         {
             foldbackMultiplier.reset(new double{ juce::jmap<double>(std::abs(updatedSample(sample)),
                                                                     kneeThreshold,
                                                                     1.0,
                                                                     1.0,
-                                                                    //static_cast<double>(std::abs(sample)) * static_cast<double>(multiplier)) });
-                                                                    static_cast<double>(std::abs(sample)) * correctMultiplier()) });
+                                                                    static_cast<double>(std::abs(sample)) * multiplier) });
         }
         else foldbackMultiplier.reset(new double{ 1.0 });
-        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / *foldbackMultiplier, updatedSample(-1.0), updatedSample(1.0), -1.0, 1.0));
-    }
-    double correctMultiplier()
-    {
-        double corrector{ static_cast<double>(JUCE_LIVE_CONSTANT(10)) / 10.0 }; // диапазон 0.2 до 0.7, больше не нужно
-        return corrector * static_cast<double>(multiplier) - (corrector - 0.5);
+        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / *foldbackMultiplier,
+                                                          updatedSample(-1.0),
+                                                          updatedSample(1.0),
+                                                          -1.0,
+                                                          1.0));
     }
 private:
     double kneeThreshold{ 0.5 };
@@ -165,9 +163,9 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    HardClipper<float> clipper{ 0.25 };
+    //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
-    //FoldbackClipper<float> clipper{ 0.5 };
+    FoldbackClipper<float> clipper{ 0.5 };
 
 private:
 #if OSC
