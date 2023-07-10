@@ -110,6 +110,7 @@ private:
     std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
+/*
 template <typename SampleType>
 class TriangleClipper : public Clipper<SampleType>
 {
@@ -117,30 +118,30 @@ public:
     TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        auto tempSample = std::make_shared<double>(static_cast<double>(sample) * multiplier);
-        recursiveSubtraction(tempSample.get());
-        return static_cast<SampleType>(*updatedSample);
+        updatedSample.reset(new double(static_cast<double>(sample)));
+        recursiveSubtraction(*updatedSample);
+        sample = static_cast<SampleType>(*updatedSample);
+        return sample;
     }
 private:
-    bool recursiveSubtraction(double* sample)
+    virtual const double& getOffset() const override { return correctionOffset; }
+    bool recursiveSubtraction(double& sample)
     {
-        updatedSample.reset(sample);
-        if (std::abs(*sample) >= 1)
+        if (std::abs(sample) >= 1)
         {
-            if (*sample < 0) { negativeSign = true; }
+            if (sample < 0) { negativeSign = true; }
             else { negativeSign = false; }
-            //updatedSample = (1 - (std::abs(updatedSample) - 1)) * (negativeSign ? -1 : 1); // вычитаем из 1 всё, что превышает её
-            updatedSample.reset(new double{ (1 - (std::abs(*sample) - 1)) * (negativeSign ? -1 : 1) });
-            recursiveSubtraction(updatedSample.get());
+            sample = (1 - (std::abs(sample) - 1)) * (negativeSign ? -1 : 1);
+            recursiveSubtraction(sample);
         }
         return true;
     }
-    virtual const double& getOffset() const override { return correctionOffset; }
 
     double correctionOffset{ correctionCoefficient - 1.0 };
     std::shared_ptr<double> updatedSample{ nullptr };
     bool negativeSign{ false };
 };
+*/
 //==============================================================================
 class ControllerLayout
 {
