@@ -40,7 +40,7 @@ public:
     Clipper(double&& corrCoef = 1.0) : correctionCoefficient(corrCoef) { }
     virtual ~Clipper() { }
     virtual SampleType process(SampleType& sample) = 0;
-    void updateMultiplier(double newValue) { multiplier = correctionCoefficient * newValue - getOffset(); }
+    virtual void updateMultiplier(double newValue) { multiplier = correctionCoefficient * newValue - getOffset(); }
 protected:
     virtual const double& getOffset() const { return correctionOffset; }
 
@@ -110,6 +110,28 @@ private:
     std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
+template <typename SampleType>
+class SineClipper : public Clipper<SampleType>
+{
+public:
+    SineClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SampleType process(SampleType& sample) override
+    {
+        auto updateSample = [this](double sample) -> double
+            { return std::sin(sample * multiplier * juce::MathConstants<double>::halfPi); };
+        auto newSample{ updateSample(static_cast<double>(sample)) };
+        if (multiplier < 1)
+        {
+            newSample = juce::jmap<double>(newSample,
+                                           updateSample(-1.0),
+                                           updateSample(1.0),
+                                           -1.0,
+                                           1.0);
+        }
+        return static_cast<SampleType>(newSample);
+    }
+};
+//==============================================================================
 class ControllerLayout
 {
 public:
@@ -168,7 +190,8 @@ public:
     ControllerLayout controllerLayout;
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
-    FoldbackClipper<float> clipper{ 0.5 };
+    //FoldbackClipper<float> clipper{ 0.5 };
+    SineClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC
