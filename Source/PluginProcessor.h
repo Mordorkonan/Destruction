@@ -130,7 +130,6 @@ public:
         }
         return static_cast<SampleType>(newSample);
     }
-private:
 };
 //==============================================================================
 class ControllerLayout
