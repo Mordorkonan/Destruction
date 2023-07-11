@@ -219,8 +219,8 @@ public:
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
-    //SineClipper<float> clipper{ 0.75 };
-    TriangleClipper<float> clipper{ 0.75 };
+    SineClipper<float> clipper{ 0.75 };
+    //TriangleClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC
