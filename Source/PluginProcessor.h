@@ -31,10 +31,10 @@ private:
 //==============================================================================
 template <typename SampleType>
 class Clipper
-    /*Базовый класс, предназначенный для модернизации различными
-    типами клипперов, такими как Hard, Soft, Sine, Triangle, Foldback.
-    Имеет чистую виртуальную функцию process, требующую переопределения
-    наследованным классом.*/
+    /*ГЃГ Г§Г®ГўГ»Г© ГЄГ«Г Г±Г±, ГЇГ°ГҐГ¤Г­Г Г§Г­Г Г·ГҐГ­Г­Г»Г© Г¤Г«Гї Г¬Г®Г¤ГҐГ°Г­ГЁГ§Г Г¶ГЁГЁ Г°Г Г§Г«ГЁГ·Г­Г»Г¬ГЁ
+    ГІГЁГЇГ Г¬ГЁ ГЄГ«ГЁГЇГЇГҐГ°Г®Гў, ГІГ ГЄГЁГ¬ГЁ ГЄГ ГЄ Hard, Soft, Sine, Triangle, Foldback.
+    Г€Г¬ГҐГҐГІ Г·ГЁГ±ГІГіГѕ ГўГЁГ°ГІГіГ Г«ГјГ­ГіГѕ ГґГіГ­ГЄГ¶ГЁГѕ process, ГІГ°ГҐГЎГіГѕГ№ГіГѕ ГЇГҐГ°ГҐГ®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГї
+    Г­Г Г±Г«ГҐГ¤Г®ГўГ Г­Г­Г»Г¬ ГЄГ«Г Г±Г±Г®Г¬.*/
 {
 public:
     Clipper(double&& corrCoef = 1.0) : correctionCoefficient(corrCoef) { }
@@ -45,10 +45,10 @@ protected:
     virtual const double& getOffset() const { return correctionOffset; }
 
     double multiplier;
-    /*корректирующие коэффициенты задают интенсивность влияния
-    параметра multiplier на обработку. При этом значение вывода
-    функции correctMulti() должно быть равно 0.5 при multiplier = 1,
-    для соблюдения линейности участка передаточной функции.*/    
+    /*ГЄГ®Г°Г°ГҐГЄГІГЁГ°ГіГѕГ№ГЁГҐ ГЄГ®ГЅГґГґГЁГ¶ГЁГҐГ­ГІГ» Г§Г Г¤Г ГѕГІ ГЁГ­ГІГҐГ­Г±ГЁГўГ­Г®Г±ГІГј ГўГ«ГЁГїГ­ГЁГї
+    ГЇГ Г°Г Г¬ГҐГІГ°Г  multiplier Г­Г  Г®ГЎГ°Г ГЎГ®ГІГЄГі. ГЏГ°ГЁ ГЅГІГ®Г¬ Г§Г­Г Г·ГҐГ­ГЁГҐ ГўГ»ГўГ®Г¤Г 
+    ГґГіГ­ГЄГ¶ГЁГЁ correctMulti() Г¤Г®Г«Г¦Г­Г® ГЎГ»ГІГј Г°Г ГўГ­Г® 0.5 ГЇГ°ГЁ multiplier = 1,
+    Г¤Г«Гї Г±Г®ГЎГ«ГѕГ¤ГҐГ­ГЁГї Г«ГЁГ­ГҐГ©Г­Г®Г±ГІГЁ ГіГ·Г Г±ГІГЄГ  ГЇГҐГ°ГҐГ¤Г ГІГ®Г·Г­Г®Г© ГґГіГ­ГЄГ¶ГЁГЁ.*/    
     double correctionCoefficient;
     double correctionOffset{ correctionCoefficient - 0.5 };
 };
@@ -106,7 +106,7 @@ public:
                                                           1.0));
     }
 private:
-    double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
+    double kneeThreshold{ 0.5 }; // ГўГ«ГЁГїГҐГІ Г­Г  Г°ГҐГ§ГЄГ®Г±ГІГј Г§ГўГіГ·Г Г­ГЁГї. Г„Г®Г«Г¦ГҐГ­ ГЎГ»ГІГј Г®ГІ 0,2 Г¤Г® 0,7 (Г­Г Г©Г¤ГҐГ­Г® ГЅГ¬ГЇГЁГ°ГЁГ·ГҐГ±ГЄГЁ)
     std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
@@ -130,6 +130,34 @@ public:
         }
         return static_cast<SampleType>(newSample);
     }
+};
+//==============================================================================
+template <typename SampleType>
+class TriangleClipper : public Clipper<SampleType>
+{
+public:
+    TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SampleType process(SampleType& sample) override
+    {
+        newSample.reset(new double{ static_cast<double>(sample) * multiplier });
+        recursiveInversion(newSample.get());
+        if (multiplier < 1) { *newSample = juce::jmap<double>(*newSample, -multiplier, multiplier, -1.0, 1.0); }
+        return static_cast<SampleType>(*newSample);
+    }
+private:
+    void recursiveInversion(double* sample)
+    {
+        if (std::abs(*sample) >= 1)
+        {
+            if (*sample < 0) { negativeSign = true; }
+            else { negativeSign = false; }
+            newSample.reset(new double((1.0 - (std::abs(*sample) - 1)) * (negativeSign ? -1.0 : 1.0)));
+            recursiveInversion(newSample.get());
+        }
+    }
+
+    std::shared_ptr<double> newSample{ nullptr };
+    bool negativeSign{ false };
 };
 //==============================================================================
 class ControllerLayout
@@ -192,6 +220,7 @@ public:
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
     SineClipper<float> clipper{ 0.75 };
+    //TriangleClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC
