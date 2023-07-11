@@ -132,6 +132,34 @@ public:
     }
 };
 //==============================================================================
+template <typename SampleType>
+class TriangleClipper : public Clipper<SampleType>
+{
+public:
+    TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SampleType process(SampleType& sample) override
+    {
+        newSample.reset(new double{ static_cast<double>(sample) * multiplier });
+        recursiveInversion(newSample.get());
+        if (multiplier < 1) { *newSample = juce::jmap<double>(*newSample, -multiplier, multiplier, -1.0, 1.0); }
+        return static_cast<SampleType>(*newSample);
+    }
+private:
+    void recursiveInversion(double* sample)
+    {
+        if (std::abs(*sample) >= 1)
+        {
+            if (*sample < 0) { negativeSign = true; }
+            else { negativeSign = false; }
+            newSample.reset(new double((1.0 - (std::abs(*sample) - 1)) * (negativeSign ? -1.0 : 1.0)));
+            recursiveInversion(newSample.get());
+        }
+    }
+
+    std::shared_ptr<double> newSample{ nullptr };
+    bool negativeSign{ false };
+};
+//==============================================================================
 class ControllerLayout
 {
 public:
