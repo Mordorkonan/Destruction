@@ -110,7 +110,28 @@ private:
     std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
-/*
+template <typename SampleType>
+class SineClipper : public Clipper<SampleType>
+{
+public:
+    SineClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SampleType process(SampleType& sample) override
+    {
+        auto updateSample = [this](double sample) -> double
+            { return std::sin(sample * multiplier * juce::MathConstants<double>::halfPi); };
+        auto newSample{ updateSample(static_cast<double>(sample)) };
+        if (multiplier < 1)
+        {
+            newSample = juce::jmap<double>(newSample,
+                                           updateSample(-1.0),
+                                           updateSample(1.0),
+                                           -1.0,
+                                           1.0);
+        }
+        return static_cast<SampleType>(newSample);
+    }
+};
+//==============================================================================
 template <typename SampleType>
 class TriangleClipper : public Clipper<SampleType>
 {
@@ -118,30 +139,26 @@ public:
     TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        updatedSample.reset(new double(static_cast<double>(sample)));
-        recursiveSubtraction(*updatedSample);
-        sample = static_cast<SampleType>(*updatedSample);
-        return sample;
+        newSample.reset(new double{ static_cast<double>(sample) * multiplier });
+        recursiveInversion(newSample.get());
+        if (multiplier < 1) { *newSample = juce::jmap<double>(*newSample, -multiplier, multiplier, -1.0, 1.0); }
+        return static_cast<SampleType>(*newSample);
     }
 private:
-    virtual const double& getOffset() const override { return correctionOffset; }
-    bool recursiveSubtraction(double& sample)
+    void recursiveInversion(double* sample)
     {
-        if (std::abs(sample) >= 1)
+        if (std::abs(*sample) >= 1)
         {
-            if (sample < 0) { negativeSign = true; }
+            if (*sample < 0) { negativeSign = true; }
             else { negativeSign = false; }
-            sample = (1 - (std::abs(sample) - 1)) * (negativeSign ? -1 : 1);
-            recursiveSubtraction(sample);
+            newSample.reset(new double((1.0 - (std::abs(*sample) - 1)) * (negativeSign ? -1.0 : 1.0)));
+            recursiveInversion(newSample.get());
         }
-        return true;
     }
 
-    double correctionOffset{ correctionCoefficient - 1.0 };
-    std::shared_ptr<double> updatedSample{ nullptr };
+    std::shared_ptr<double> newSample { nullptr };
     bool negativeSign{ false };
 };
-*/
 //==============================================================================
 class ControllerLayout
 {
@@ -202,7 +219,8 @@ public:
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
-    TriangleClipper<float> clipper{ 0.25 };
+    //SineClipper<float> clipper{ 0.75 };
+    TriangleClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC
