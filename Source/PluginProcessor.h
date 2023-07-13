@@ -32,7 +32,7 @@ private:
 template <typename SampleType>
 class Clipper
     /*Базовый класс, предназначенный для модернизации различными
-    типами клипперов, такими как Hard, Soft, Sine, Triangle, Foldback.
+    типами клипперов, такими как Hard, Soft, SineFold, LinearFold, Foldback.
     Имеет чистую виртуальную функцию process, требующую переопределения
     наследованным классом.*/
 {
@@ -111,7 +111,7 @@ private:
 };
 //==============================================================================
 template <typename SampleType>
-class SineClipper : public Clipper<SampleType>
+class SineFoldClipper : public Clipper<SampleType>
 {
 public:
     SineClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
@@ -133,7 +133,7 @@ public:
 };
 //==============================================================================
 template <typename SampleType>
-class TriangleClipper : public Clipper<SampleType>
+class LinearFoldClipper : public Clipper<SampleType>
 {
 public:
     TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
@@ -219,7 +219,7 @@ public:
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
-    SineClipper<float> clipper{ 0.75 };
+    //SineClipper<float> clipper{ 0.75 };
     //TriangleClipper<float> clipper{ 0.75 };
 
 private:
