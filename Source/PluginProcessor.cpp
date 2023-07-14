@@ -9,54 +9,54 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 //==============================================================================
-template <typename Type, size_t size>
-size_t Fifo<Type, size>::getSize() noexcept { return size; }
+//template <typename Type, size_t size>
+//size_t Fifo<Type, size>::getSize() noexcept { return size; }
 
-template <typename Type, size_t size>
-void Fifo<Type, size>::prepare(int numSamples, int numChannels)
-{
-    for (auto& buffer : buffers)
-    {
-        buffer.setSize(numChannels, numSamples, false, true, false);
-        buffer.clear();
-    }    
-}
+//template <typename Type, size_t size>
+//void Fifo<Type, size>::prepare(int numSamples, int numChannels)
+//{
+//    for (auto& buffer : buffers)
+//    {
+//        buffer.setSize(numChannels, numSamples, false, true, false);
+//        buffer.clear();
+//    }    
+//}
 
-template <typename Type, size_t size>
-bool Fifo<Type, size>::pull(Type& t)
-{
-    auto readIndex = fifo.read(1);
-    if (readIndex.blockSize1 > 0)
-    {
-        t = buffers[readIndex.startIndex1];
-        return true;
-    }
-    else { return false; }
-}
+//template <typename Type, size_t size>
+//bool Fifo<Type, size>::pull(Type& t)
+//{
+//    auto readIndex = fifo.read(1);
+//    if (readIndex.blockSize1 > 0)
+//    {
+//        t = buffers[readIndex.startIndex1];
+//        return true;
+//    }
+//    else { return false; }
+//}
 
-template <typename Type, size_t size>
-bool Fifo<Type, size>::push(const Type& t)
-{
-    auto writeIndex = fifo.write(1);
-    if (writeIndex.blockSize1 > 0)
-    {
-        buffers[writeIndex.startIndex1] = t;
-        return true;
-    }
-    else { return false; }
-}
+//template <typename Type, size_t size>
+//bool Fifo<Type, size>::push(const Type& t)
+//{
+//    auto writeIndex = fifo.write(1);
+//    if (writeIndex.blockSize1 > 0)
+//    {
+//        buffers[writeIndex.startIndex1] = t;
+//        return true;
+//    }
+//    else { return false; }
+//}
 
-template <typename Type, size_t size>
-int Fifo<Type, size>::getNumAvailableForReading() const
-{
-    return fifo.getNumReady();
-}
-
-template <typename Type, size_t size>
-int Fifo<Type, size>::getAvailableSpace() const
-{
-    return fifo.getFreeSpace();
-}
+//template <typename Type, size_t size>
+//int Fifo<Type, size>::getNumAvailableForReading() const
+//{
+//    return fifo.getNumReady();
+//}
+//
+//template <typename Type, size_t size>
+//int Fifo<Type, size>::getAvailableSpace() const
+//{
+//    return fifo.getFreeSpace();
+//}
 //==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations

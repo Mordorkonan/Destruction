@@ -17,12 +17,42 @@ template <typename Type, size_t size>
 class Fifo
 {
 public:
-    size_t getSize() noexcept;
-    void prepare(int numSamples, int numChannels);
-    int getNumAvailableForReading() const;
-    int getAvailableSpace() const;
-    bool pull(Type& t);
-    bool push(const Type& t);
+    size_t getSize() noexcept { return size; }
+
+    void prepare(int numSamples, int numChannels)
+    {
+        for (auto& buffer : buffers)
+        {
+            buffer.setSize(numChannels, numSamples, false, true, false);
+            buffer.clear();
+        }
+    }
+
+    int getNumAvailableForReading() const { return fifo.getNumReady(); }
+
+    int getAvailableSpace() const { return fifo.getFreeSpace(); }
+
+    bool pull(Type& t)
+    {
+        auto readIndex = fifo.read(1);
+        if (readIndex.blockSize1 > 0)
+        {
+            t = buffers[readIndex.startIndex1];
+            return true;
+        }
+        else { return false; }
+    }
+
+    bool push(const Type& t)
+    {
+        auto writeIndex = fifo.write(1);
+        if (writeIndex.blockSize1 > 0)
+        {
+            buffers[writeIndex.startIndex1] = t;
+            return true;
+        }
+        else { return false; }
+    }
 
 private:
     juce::AbstractFifo fifo{ size };
@@ -219,7 +249,7 @@ public:
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
-    //SineClipper<float> clipper{ 0.75 };
+    //SineFoldClipper<float> clipper{ 0.75 };
     LinearFoldClipper<float> clipper{ 0.75 };
 
 private:
