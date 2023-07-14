@@ -72,7 +72,7 @@ template <typename SampleType>
 class SoftClipper : public Clipper<SampleType>
 {
 public:
-    SoftClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SoftClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
@@ -85,7 +85,7 @@ template <typename SampleType>
 class FoldbackClipper : public Clipper<SampleType>
 {
 public:
-    FoldbackClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    FoldbackClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         auto updatedSample = [this](SampleType sample) -> double
@@ -114,7 +114,7 @@ template <typename SampleType>
 class SineFoldClipper : public Clipper<SampleType>
 {
 public:
-    SineClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    SineFoldClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         auto updateSample = [this](double sample) -> double
@@ -136,7 +136,7 @@ template <typename SampleType>
 class LinearFoldClipper : public Clipper<SampleType>
 {
 public:
-    TriangleClipper(double&& corrCoef = 1.0) : Clipper(std::move(corrCoef)) { }
+    LinearFoldClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
         newSample.reset(new double{ static_cast<double>(sample) * multiplier });
@@ -220,7 +220,7 @@ public:
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
     //SineClipper<float> clipper{ 0.75 };
-    //TriangleClipper<float> clipper{ 0.75 };
+    LinearFoldClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC
