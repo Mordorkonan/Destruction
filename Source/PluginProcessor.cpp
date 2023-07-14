@@ -9,6 +9,21 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 //==============================================================================
+ClipHolder::ClipHolder()
+{
+    clippers.push_back(dynamic_cast<Clipper<float>*>(hardClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(softClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(foldbackClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper.get()));
+    
+    currentClipper = hard; // убрать, когда будет дерево параметров
+}
+
+void ClipHolder::setClipper(int newClipper) { currentClipper = newClipper; }
+
+Clipper<float>* ClipHolder::getClipper() const { return clippers[currentClipper]; }
+//==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
         : AudioProcessor(BusesProperties()
@@ -20,29 +35,7 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
     #endif
         )
 #endif
-{
-    hardClipper = std::make_shared<HardClipper<float>>(0.25);
-    softClipper = std::make_shared<SoftClipper<float>>(1.25);
-    foldbackClipper = std::make_shared<FoldbackClipper<float>>(0.5);
-    sineFoldClipper = std::make_shared<SineFoldClipper<float>>(0.75);
-    linearFoldClipper = std::make_shared<LinearFoldClipper<float>>(0.75);
-    //auto hardClipper = new HardClipper<float>(0.25);
-    //auto softClipper = new SoftClipper<float>(0.25);
-    //auto foldbackClipper = new FoldbackClipper<float>(0.25);
-    //auto sineFoldClipper = new SineFoldClipper<float>(0.25);
-    //auto linearFoldClipper = new LinearFoldClipper<float>(0.25);
-    clippers.push_back(dynamic_cast<Clipper<float>*>(hardClipper.get()));
-    clippers.push_back(dynamic_cast<Clipper<float>*>(softClipper.get()));
-    clippers.push_back(dynamic_cast<Clipper<float>*>(foldbackClipper.get()));
-    clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper.get()));
-    clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper.get()));
-
-    //clippers.push_back(dynamic_cast<Clipper<float>*>(hardClipper));
-    //clippers.push_back(dynamic_cast<Clipper<float>*>(softClipper));
-    //clippers.push_back(dynamic_cast<Clipper<float>*>(foldbackClipper));
-    //clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper));
-    //clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper));
-    currentClipper = hard;
+{    
 }
 
 DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
@@ -185,7 +178,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         {
             *sample = buffer.getSample(i, j);
             //buffer.setSample(i, j, clipper.process(*sample));
-            buffer.setSample(i, j, clippers[currentClipper]->process(*sample));
+            buffer.setSample(i, j, clipHolder.getClipper()->process(*sample));
         }
     }
     delete sample;

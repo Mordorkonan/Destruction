@@ -17,16 +17,16 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     // editor's size to whatever you need it to be.
     setSize (600, 300);
 
-    clipperBox.addItem("Hard Clip", 1);
-    clipperBox.addItem("Soft Clip", 2);
-    clipperBox.addItem("Fold Back", 3);
-    clipperBox.addItem("Sine Fold", 4);
-    clipperBox.addItem("Linear Fold", 5);
+    clipperBox.addItem("Hard Clip", hard);
+    clipperBox.addItem("Soft Clip", soft);
+    clipperBox.addItem("Fold Back", foldback);
+    clipperBox.addItem("Sine Fold", sinefold);
+    clipperBox.addItem("Linear Fold", linearfold);
     clipperBox.setSelectedItemIndex(1);
     clipperBox.onChange = [this]()
     {
-        audioProcessor.currentClipper = clipperBox.getSelectedItemIndex();
-        audioProcessor.clippers[audioProcessor.currentClipper]->updateMultiplier(clipSlider.getValue());
+        audioProcessor.clipHolder.setClipper(clipperBox.getSelectedItemIndex());
+        audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
     };
     addAndMakeVisible(clipperBox);
 
@@ -45,7 +45,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.setValue(1.0);
     clipSlider.onValueChange = [this]()
     {
-        audioProcessor.clippers[audioProcessor.currentClipper]->updateMultiplier(clipSlider.getValue());
+        audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
     };
     addAndMakeVisible(clipSlider);
 }

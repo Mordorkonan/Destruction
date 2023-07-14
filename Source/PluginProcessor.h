@@ -11,9 +11,15 @@
 #include <JuceHeader.h>
 
 #define OSC false
-/**
-*/
-enum ClipperType { hard, soft, foldback, sinefold, linearfold };
+//========================================
+// Clipper correction coefficients
+#define HARDCLIP_COEF 0.25
+#define SOFTCLIP_COEF 1.25
+#define FOLDBACK_COEF 0.5
+#define SINEFOLD_COEF 0.75
+#define LINEARFOLD_COEF 0.75
+//========================================
+enum ClipperType { hard = 1, soft, foldback, sinefold, linearfold };
 //==============================================================================
 template <typename Type, size_t size>
 class Fifo
@@ -192,6 +198,22 @@ private:
     bool negativeSign{ false };
 };
 //==============================================================================
+class ClipHolder
+{
+public:
+    ClipHolder();
+    void setClipper(int newClipper);
+    Clipper<float>* getClipper() const;
+private:
+    std::vector<Clipper<float>*> clippers;
+    int currentClipper;
+    std::shared_ptr<HardClipper<float>> hardClipper{ new HardClipper<float>(HARDCLIP_COEF) };
+    std::shared_ptr<SoftClipper<float>> softClipper{ new SoftClipper<float>(SOFTCLIP_COEF) };
+    std::shared_ptr<FoldbackClipper<float>> foldbackClipper{ new FoldbackClipper<float>(FOLDBACK_COEF) };
+    std::shared_ptr<SineFoldClipper<float>> sineFoldClipper{ new SineFoldClipper<float>(SINEFOLD_COEF) };
+    std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper{ new LinearFoldClipper<float>(LINEARFOLD_COEF) };
+};
+//==============================================================================
 class ControllerLayout
 {
 public:
@@ -248,19 +270,7 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    std::vector<Clipper<float>*> clippers;
-    int currentClipper;
-    std::shared_ptr<HardClipper<float>> hardClipper;
-    std::shared_ptr<SoftClipper<float>> softClipper;
-    std::shared_ptr<FoldbackClipper<float>> foldbackClipper;
-    std::shared_ptr<SineFoldClipper<float>> sineFoldClipper;
-    std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper;
-    //HardClipper<float> clipper{ 0.25 };
-    //SoftClipper<float> clipper{ 1.25 };
-    //FoldbackClipper<float> clipper{ 0.5 };
-    //SineFoldClipper<float> clipper{ 0.75 };
-    //LinearFoldClipper<float> clipper{ 0.75 };
-
+    ClipHolder clipHolder;
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
