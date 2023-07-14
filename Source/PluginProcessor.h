@@ -11,18 +11,56 @@
 #include <JuceHeader.h>
 
 #define OSC false
-/**
-*/
+//========================================
+// Clipper correction coefficients
+#define HARDCLIP_COEF 0.25
+#define SOFTCLIP_COEF 1.25
+#define FOLDBACK_COEF 0.5
+#define SINEFOLD_COEF 0.75
+#define LINEARFOLD_COEF 0.75
+//========================================
+enum ClipperType { hard = 1, soft, foldback, sinefold, linearfold };
+//==============================================================================
 template <typename Type, size_t size>
 class Fifo
 {
 public:
-    size_t getSize() noexcept;
-    void prepare(int numSamples, int numChannels);
-    int getNumAvailableForReading() const;
-    int getAvailableSpace() const;
-    bool pull(Type& t);
-    bool push(const Type& t);
+    size_t getSize() noexcept { return size; }
+
+    void prepare(int numSamples, int numChannels)
+    {
+        for (auto& buffer : buffers)
+        {
+            buffer.setSize(numChannels, numSamples, false, true, false);
+            buffer.clear();
+        }
+    }
+
+    int getNumAvailableForReading() const { return fifo.getNumReady(); }
+
+    int getAvailableSpace() const { return fifo.getFreeSpace(); }
+
+    bool pull(Type& t)
+    {
+        auto readIndex = fifo.read(1);
+        if (readIndex.blockSize1 > 0)
+        {
+            t = buffers[readIndex.startIndex1];
+            return true;
+        }
+        else { return false; }
+    }
+
+    bool push(const Type& t)
+    {
+        auto writeIndex = fifo.write(1);
+        if (writeIndex.blockSize1 > 0)
+        {
+            buffers[writeIndex.startIndex1] = t;
+            return true;
+        }
+        else { return false; }
+    }
 
 private:
     juce::AbstractFifo fifo{ size };
@@ -44,7 +82,7 @@ public:
 protected:
     virtual const double& getOffset() const { return correctionOffset; }
 
-    double multiplier;
+    double multiplier{ 1.0 };
     /*корректирующие коэффициенты задают интенсивность влияния
     параметра multiplier на обработку. При этом значение вывода
     функции correctMulti() должно быть равно 0.5 при multiplier = 1,
@@ -60,7 +98,7 @@ public:
     HardClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier);
+        return static_cast<SampleType>(juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier));
     }
 private:
     virtual const double& getOffset() const override { return correctionOffset; }
@@ -160,6 +198,22 @@ private:
     bool negativeSign{ false };
 };
 //==============================================================================
+class ClipHolder
+{
+public:
+    ClipHolder();
+    void setClipper(int newClipper);
+    Clipper<float>* getClipper() const;
+private:
+    std::vector<Clipper<float>*> clippers;
+    int currentClipper;
+    std::shared_ptr<HardClipper<float>> hardClipper{ new HardClipper<float>(HARDCLIP_COEF) };
+    std::shared_ptr<SoftClipper<float>> softClipper{ new SoftClipper<float>(SOFTCLIP_COEF) };
+    std::shared_ptr<FoldbackClipper<float>> foldbackClipper{ new FoldbackClipper<float>(FOLDBACK_COEF) };
+    std::shared_ptr<SineFoldClipper<float>> sineFoldClipper{ new SineFoldClipper<float>(SINEFOLD_COEF) };
+    std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper{ new LinearFoldClipper<float>(LINEARFOLD_COEF) };
+};
+//==============================================================================
 class ControllerLayout
 {
 public:
@@ -216,12 +270,7 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
-    //HardClipper<float> clipper{ 0.25 };
-    //SoftClipper<float> clipper{ 1.25 };
-    //FoldbackClipper<float> clipper{ 0.5 };
-    //SineClipper<float> clipper{ 0.75 };
-    LinearFoldClipper<float> clipper{ 0.75 };
-
+    ClipHolder clipHolder;
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
