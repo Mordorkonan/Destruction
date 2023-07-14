@@ -82,7 +82,7 @@ public:
 protected:
     virtual const double& getOffset() const { return correctionOffset; }
 
-    double multiplier;
+    double multiplier{ 1.0 };
     /*корректирующие коэффициенты задают интенсивность влияния
     параметра multiplier на обработку. При этом значение вывода
     функции correctMulti() должно быть равно 0.5 при multiplier = 1,
