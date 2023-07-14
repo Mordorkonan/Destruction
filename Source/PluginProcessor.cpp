@@ -9,55 +9,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 //==============================================================================
-//template <typename Type, size_t size>
-//size_t Fifo<Type, size>::getSize() noexcept { return size; }
-
-//template <typename Type, size_t size>
-//void Fifo<Type, size>::prepare(int numSamples, int numChannels)
-//{
-//    for (auto& buffer : buffers)
-//    {
-//        buffer.setSize(numChannels, numSamples, false, true, false);
-//        buffer.clear();
-//    }    
-//}
-
-//template <typename Type, size_t size>
-//bool Fifo<Type, size>::pull(Type& t)
-//{
-//    auto readIndex = fifo.read(1);
-//    if (readIndex.blockSize1 > 0)
-//    {
-//        t = buffers[readIndex.startIndex1];
-//        return true;
-//    }
-//    else { return false; }
-//}
-
-//template <typename Type, size_t size>
-//bool Fifo<Type, size>::push(const Type& t)
-//{
-//    auto writeIndex = fifo.write(1);
-//    if (writeIndex.blockSize1 > 0)
-//    {
-//        buffers[writeIndex.startIndex1] = t;
-//        return true;
-//    }
-//    else { return false; }
-//}
-
-//template <typename Type, size_t size>
-//int Fifo<Type, size>::getNumAvailableForReading() const
-//{
-//    return fifo.getNumReady();
-//}
-//
-//template <typename Type, size_t size>
-//int Fifo<Type, size>::getAvailableSpace() const
-//{
-//    return fifo.getFreeSpace();
-//}
-//==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
         : AudioProcessor(BusesProperties()
@@ -70,6 +21,28 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
         )
 #endif
 {
+    hardClipper = std::make_shared<HardClipper<float>>(0.25);
+    softClipper = std::make_shared<SoftClipper<float>>(1.25);
+    foldbackClipper = std::make_shared<FoldbackClipper<float>>(0.5);
+    sineFoldClipper = std::make_shared<SineFoldClipper<float>>(0.75);
+    linearFoldClipper = std::make_shared<LinearFoldClipper<float>>(0.75);
+    //auto hardClipper = new HardClipper<float>(0.25);
+    //auto softClipper = new SoftClipper<float>(0.25);
+    //auto foldbackClipper = new FoldbackClipper<float>(0.25);
+    //auto sineFoldClipper = new SineFoldClipper<float>(0.25);
+    //auto linearFoldClipper = new LinearFoldClipper<float>(0.25);
+    clippers.push_back(dynamic_cast<Clipper<float>*>(hardClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(softClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(foldbackClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper.get()));
+    clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper.get()));
+
+    //clippers.push_back(dynamic_cast<Clipper<float>*>(hardClipper));
+    //clippers.push_back(dynamic_cast<Clipper<float>*>(softClipper));
+    //clippers.push_back(dynamic_cast<Clipper<float>*>(foldbackClipper));
+    //clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper));
+    //clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper));
+    currentClipper = hard;
 }
 
 DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
@@ -211,7 +184,8 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         for (int j = 0; j < numOfSamples; ++j)
         {
             *sample = buffer.getSample(i, j);
-            buffer.setSample(i, j, clipper.process(*sample));
+            //buffer.setSample(i, j, clipper.process(*sample));
+            buffer.setSample(i, j, clippers[currentClipper]->process(*sample));
         }
     }
     delete sample;

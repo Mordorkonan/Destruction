@@ -13,6 +13,8 @@
 #define OSC false
 /**
 */
+enum ClipperType { hard, soft, foldback, sinefold, linearfold };
+//==============================================================================
 template <typename Type, size_t size>
 class Fifo
 {
@@ -90,7 +92,7 @@ public:
     HardClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        return juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier);
+        return static_cast<SampleType>(juce::jlimit<double>(-1.0, 1.0, static_cast<double>(sample) * multiplier));
     }
 private:
     virtual const double& getOffset() const override { return correctionOffset; }
@@ -246,11 +248,18 @@ public:
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     ControllerLayout controllerLayout;
+    std::vector<Clipper<float>*> clippers;
+    int currentClipper;
+    std::shared_ptr<HardClipper<float>> hardClipper;
+    std::shared_ptr<SoftClipper<float>> softClipper;
+    std::shared_ptr<FoldbackClipper<float>> foldbackClipper;
+    std::shared_ptr<SineFoldClipper<float>> sineFoldClipper;
+    std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper;
     //HardClipper<float> clipper{ 0.25 };
     //SoftClipper<float> clipper{ 1.25 };
     //FoldbackClipper<float> clipper{ 0.5 };
     //SineFoldClipper<float> clipper{ 0.75 };
-    LinearFoldClipper<float> clipper{ 0.75 };
+    //LinearFoldClipper<float> clipper{ 0.75 };
 
 private:
 #if OSC

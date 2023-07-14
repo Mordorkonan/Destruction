@@ -29,6 +29,7 @@ private:
                              juce::Slider::TextEntryBoxPosition::TextBoxBelow };
     juce::Slider clipSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                              juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+    juce::ComboBox clipperBox{ "Clippers" };
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DistortionTestAudioProcessor& audioProcessor;

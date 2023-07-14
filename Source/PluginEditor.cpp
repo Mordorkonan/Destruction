@@ -17,6 +17,19 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     // editor's size to whatever you need it to be.
     setSize (600, 300);
 
+    clipperBox.addItem("Hard Clip", 1);
+    clipperBox.addItem("Soft Clip", 2);
+    clipperBox.addItem("Fold Back", 3);
+    clipperBox.addItem("Sine Fold", 4);
+    clipperBox.addItem("Linear Fold", 5);
+    clipperBox.setSelectedItemIndex(1);
+    clipperBox.onChange = [this]()
+    {
+        audioProcessor.currentClipper = clipperBox.getSelectedItemIndex();
+        audioProcessor.clippers[audioProcessor.currentClipper]->updateMultiplier(clipSlider.getValue());
+    };
+    addAndMakeVisible(clipperBox);
+
     juce::Slider::RotaryParameters rotaryParameters;
     rotaryParameters.startAngleRadians = juce::MathConstants<float>::twoPi - 3 * 0.25f * juce::MathConstants<float>::pi;
     rotaryParameters.endAngleRadians = juce::MathConstants<float>::twoPi + 3 * 0.25f * juce::MathConstants<float>::pi;
@@ -30,7 +43,10 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.setRotaryParameters(rotaryParameters);
     clipSlider.setRange(1.0, 10.0);
     clipSlider.setValue(1.0);
-    clipSlider.onValueChange = [this]() { audioProcessor.clipper.updateMultiplier(clipSlider.getValue()); };
+    clipSlider.onValueChange = [this]()
+    {
+        audioProcessor.clippers[audioProcessor.currentClipper]->updateMultiplier(clipSlider.getValue());
+    };
     addAndMakeVisible(clipSlider);
 }
 
@@ -50,6 +66,7 @@ void DistortionTestAudioProcessorEditor::resized()
     auto bounds{ juce::Rectangle<int>(75, 75, 100, 100) };
     gainSlider.setBounds(bounds);
     clipSlider.setBounds(bounds.withX(bounds.getRight() + 10));
+    clipperBox.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
 
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
