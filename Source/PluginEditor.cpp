@@ -38,6 +38,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     inputGainSlider.setRotaryParameters(rotaryParameters);
     inputGainSlider.setRange(-12.0, 12.0);
     inputGainSlider.setValue(0.0);
+    inputGainSlider.setDoubleClickReturnValue(true, 0.0);
     inputGainSlider.onValueChange = [this]()
     {
         audioProcessor.gainController.setInputGainLevelInDb(inputGainSlider.getValue());
@@ -51,6 +52,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     outputGainSlider.setRotaryParameters(rotaryParameters);
     outputGainSlider.setRange(-12.0, 12.0);
     outputGainSlider.setValue(0.0);
+    outputGainSlider.setDoubleClickReturnValue(true, 0.0);
     outputGainSlider.onValueChange = [this]()
     {
         audioProcessor.gainController.setOutputGainLevelInDb(outputGainSlider.getValue());
@@ -64,6 +66,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.setRotaryParameters(rotaryParameters);
     clipSlider.setRange(1.0, 10.0);
     clipSlider.setValue(1.0);
+    clipSlider.setDoubleClickReturnValue(true, 1.0);
     clipSlider.onValueChange = [this]()
     {
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());

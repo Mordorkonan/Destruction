@@ -18,6 +18,9 @@
 #define FOLDBACK_COEF 0.5
 #define SINEFOLD_COEF 0.75
 #define LINEARFOLD_COEF 0.75
+// Sensitivities
+#define SLOW_SENS 125
+#define NORM_SENS 250
 //========================================
 enum ClipperType { hard = 1, soft, foldback, sinefold, linearfold };
 //==============================================================================
