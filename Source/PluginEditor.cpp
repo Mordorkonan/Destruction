@@ -24,29 +24,29 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     float radius{ width > height ? (bounds.getHeight() / 2) : (bounds.getWidth() / 2) };
     juce::Path circumference;
     circumference.addEllipse(bounds);
-    // ������ ��������� ���
+    // Рисуем одиночный шип
     //juce::Point<float> pivot{ center.translated(0.0f, -radius * 0.3f) };
     juce::Point<float> peak{ center.translated(0.0f, -radius * 0.6f) };
-    // angle = 1.0f � 1.25f ����s ��� ������� ���� = ����� ���� / ������
-    // �������� ���� � ������� ����� ������������ ������� ��������.
+    // angle = 1.0f и 1.25f взятs при расчёте угла = длина дуги / радиус
+    // значения дуги и радиуса взяты относительно дизайна слайдера.
     juce::Point<float> p1{ center.getPointOnCircumference(radius, -1.00f) };
     juce::Point<float> p2{ center.getPointOnCircumference(radius, -1.25f) };
     juce::Path spike;
     spike.startNewSubPath(p1);
-    /* ��� ������������� ������� quadraticTo ���������� ����������� �����.
-    ��������� ��� ����� ��� ������ ���� ����, ���������� � ��������
-    ��������� � ������ p1 � p2. �������� �������� ��� ����������� �����
-    ��������� � �������������� JUCE_LIVE_CONSTANT. */
+    /* Для использования функции quadraticTo необходимо контрольная точка.
+    Поскольку она нужна для каждой дуги своя, необходимо её создание
+    привязать к точкам p1 и p2. Значения смещения для контрольных точек
+    подобраны с использованием JUCE_LIVE_CONSTANT. */
     spike.quadraticTo(p1.withX(p1.x + radius * 0.35f).withY(p1.y - radius * 0.15f), peak);
     spike.quadraticTo(p2.withX(p2.x + radius * 0.30f).withY(p2.y - radius * 0.25f), p2);
     spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
     spike.closeSubPath();
-    // ���������� ���� �� 8 ���� �� ���� ����������
+    // размножаем шипы на 8 штук по всей окружности
     float correction = JUCE_LIVE_CONSTANT(50) * 0.01;
     g.reduceClipRegion(circumference);
     g.addTransform(juce::AffineTransform::rotation(
         juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
-    g.addTransform(juce::AffineTransform::scale(1.7f - sliderPosProportional * 0.7f,
+    g.addTransform(juce::AffineTransform::scale(1.6f - sliderPosProportional * 0.6f,
         1.7f - sliderPosProportional * 0.7f,
         center.x,
         center.y));
