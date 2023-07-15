@@ -25,8 +25,10 @@ public:
     void resized() override;
 
 private:
-    juce::Slider gainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                             juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+    juce::Slider inputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+                                  juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+    juce::Slider outpitGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+                                   juce::Slider::TextEntryBoxPosition::TextBoxBelow };
     juce::Slider clipSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                              juce::Slider::TextEntryBoxPosition::TextBoxBelow };
     juce::ComboBox clipperBox{ "Clippers" };
