@@ -43,7 +43,6 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         audioProcessor.gainController.setInputGainLevelInDb(inputGainSlider.getValue());
         if (linkButton.getToggleState())
         {
-            //audioProcessor.gainController.setOutputGainLevelInDb(-inputGainSlider.getValue());
             outputGainSlider.setValue(-inputGainSlider.getValue());
         }
     };
@@ -57,7 +56,6 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         audioProcessor.gainController.setOutputGainLevelInDb(outputGainSlider.getValue());
         if (linkButton.getToggleState())
         {
-            //audioProcessor.gainController.setInputGainLevelInDb(-outputGainSlider.getValue());
             inputGainSlider.setValue(-outputGainSlider.getValue());
         }
     };
@@ -75,8 +73,14 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     linkButton.setToggleState(true, juce::NotificationType::sendNotification);
     linkButton.onStateChange = [this]()
     {
-        if (linkButton.getToggleState()) { outputGainSlider.setValue(-inputGainSlider.getValue()); }
-        //audioProcessor.gainController.setLinkState(linkButton.getToggleState());
+        if (linkButton.getToggleState())
+        {
+            if (inputGainSlider.getValue() < 0)
+            {
+                inputGainSlider.setValue(-outputGainSlider.getValue());
+            }
+            else { outputGainSlider.setValue(-inputGainSlider.getValue()); }            
+        }
     };
     addAndMakeVisible(linkButton);
 }
