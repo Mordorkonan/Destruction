@@ -18,6 +18,9 @@
 #define FOLDBACK_COEF 0.5
 #define SINEFOLD_COEF 0.75
 #define LINEARFOLD_COEF 0.75
+// Sensitivities
+#define SLOW_SENS 125
+#define NORM_SENS 250
 //========================================
 enum ClipperType { hard = 1, soft, foldback, sinefold, linearfold };
 //==============================================================================
@@ -214,13 +217,17 @@ private:
     std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper{ new LinearFoldClipper<float>(LINEARFOLD_COEF) };
 };
 //==============================================================================
-class ControllerLayout
+class GainController
 {
 public:
-    void setGainLevelInDecibels(const double& value);
-    double getGainLevelInDecibels() const;
+    void setInputGainLevelInDb(const double& value);
+    double getInputGainLevelInDb() const;
+
+    void setOutputGainLevelInDb(const double& value);
+    double getOutputGainLevelInDb() const;
 private:
-    double gainLevelInDecibels{ -18.0 };
+    double inputGainInDb{ 0.0 };
+    double outputGainInDb{ 0.0 };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
@@ -269,13 +276,14 @@ public:
     //==============================================================================
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
-    ControllerLayout controllerLayout;
+    GainController gainController;
     ClipHolder clipHolder;
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
 #endif // OSC
-    juce::dsp::Gain<float> gain;
+    juce::dsp::Gain<float> inputGain;
+    juce::dsp::Gain<float> outputGain;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)
