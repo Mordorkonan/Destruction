@@ -10,10 +10,17 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-
 //==============================================================================
-/**
-*/
+class XcytheLookAndFeel_v1 : public juce::LookAndFeel_V4
+{
+public:
+    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
+                          float sliderPosProportional, float rotaryStartAngle,
+                          float rotaryEndAngle, juce::Slider& slider) override;
+    void drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
+                          bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+};
+//==============================================================================
 class DistortionTestAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
@@ -25,12 +32,13 @@ public:
     void resized() override;
 
 private:
+    XcytheLookAndFeel_v1 newLNF;
     juce::Slider inputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                  juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+                                  juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::Slider outputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                   juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+                                   juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::Slider clipSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                             juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+                             juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::ComboBox clipperBox{ "Clippers" };
     juce::ToggleButton linkButton{ "Link" };
     // This reference is provided as a quick way for your editor to
