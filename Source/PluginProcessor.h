@@ -72,10 +72,10 @@ private:
 //==============================================================================
 template <typename SampleType>
 class Clipper
-    /*Базовый класс, предназначенный для модернизации различными
+    /* Базовый класс, предназначенный для модернизации различными
     типами клипперов, такими как Hard, Soft, SineFold, LinearFold, Foldback.
     Имеет чистую виртуальную функцию process, требующую переопределения
-    наследованным классом.*/
+    наследованным классом. */
 {
 public:
     Clipper(double&& corrCoef = 1.0) : correctionCoefficient(corrCoef) { }
@@ -86,10 +86,11 @@ protected:
     virtual const double& getOffset() const { return correctionOffset; }
 
     double multiplier{ 1.0 };
-    /*корректирующие коэффициенты задают интенсивность влияния
+    /* Корректирующие коэффициенты задают интенсивность влияния
     параметра multiplier на обработку. При этом значение вывода
     функции correctMulti() должно быть равно 0.5 при multiplier = 1,
-    для соблюдения линейности участка передаточной функции.*/
+    для соблюдения линейности участка передаточной функции.
+    Исключение - HardClipper. */
     double correctionCoefficient;
     double correctionOffset{ correctionCoefficient - 0.5 };
 };

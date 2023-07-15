@@ -24,7 +24,6 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     juce::Path circumference;
     circumference.addEllipse(bounds);
     // Рисуем одиночный шип
-    //juce::Point<float> pivot{ center.translated(0.0f, -radius * 0.3f) };
     juce::Point<float> peak{ center.translated(0.0f, -radius * 0.6f) };
     // angle = 1.0f и 1.25f взятs при расчёте угла = длина дуги / радиус
     // значения дуги и радиуса взяты относительно дизайна слайдера.
@@ -54,6 +53,41 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
         spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
         g.fillPath(spike);
     }
+}
+
+void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
+                                            bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    float lineThickness{ 1.0f };
+    auto fontSize = juce::jmin(16.0f, static_cast<float>(togglebutton.getHeight() * 0.75));
+    auto bounds{ togglebutton.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
+
+    // отрисовка 6-угольного контура кнопки
+    juce::Path contour;
+    auto chamfer{ bounds.getHeight() * 0.5f };
+    contour.startNewSubPath(bounds.getX(), chamfer);
+    contour.lineTo(bounds.getX() + chamfer, bounds.getY());
+    contour.lineTo(bounds.getRight() - chamfer, bounds.getY());
+    contour.lineTo(bounds.getRight(), bounds.getY() + chamfer);
+    contour.lineTo(bounds.getRight() - chamfer, bounds.getHeight());
+    contour.lineTo(bounds.getX() + chamfer, bounds.getHeight());
+    contour.closeSubPath();
+
+    // определяем цвет в зависимости от состояния кнопки
+    auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
+                        togglebutton.hasKeyboardFocus(true) ? 1.3f : 1.0f)
+                        .withMultipliedAlpha(togglebutton.getToggleState() ? 1.0f : 0.5f)};
+    if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
+    {
+        baseColor = baseColor.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
+    }
+    g.setColour(baseColor);
+    g.fillPath(contour);
+    g.setColour(juce::Colours::white);
+    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
+
+    g.setFont(fontSize);
+    g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
 }
 //==============================================================================
 DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
@@ -140,6 +174,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
             else { outputGainSlider.setValue(-inputGainSlider.getValue()); }            
         }
     };
+    linkButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(linkButton);
 }
 
@@ -160,7 +195,7 @@ void DistortionTestAudioProcessorEditor::resized()
     inputGainSlider.setBounds(bounds);
     clipSlider.setBounds(bounds.withX(bounds.getRight() + 10));
     outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
-    clipperBox.setBounds(bounds.withHeight(20).withX(outputGainSlider.getBounds().getRight() + 10));
+    clipperBox.setBounds(bounds.withHeight(28).withX(outputGainSlider.getBounds().getRight() + 10));
     linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
 
     // This is generally where you'll want to lay out the positions of any
