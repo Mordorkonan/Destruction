@@ -98,12 +98,9 @@ void TransientFunctionGraph::timerCallback()
 {
     if (needUpdate)
     {
-        if (juce::Time::currentTimeMillis() - time >= 100)
-        {
-            needUpdate = false;
-            time = juce::Time::currentTimeMillis();
-            repaint();
-        }
+        needUpdate = false;
+        time = juce::Time::currentTimeMillis();
+        repaint();
     }
 }
 
@@ -158,6 +155,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         audioProcessor.clipHolder.setClipper(clipperBox.getSelectedItemIndex());
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
         graph.initialize(audioProcessor.clipHolder.getClipper());
+        graph.update();
     };
     addAndMakeVisible(clipperBox);
     //==================================================
@@ -228,7 +226,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     linkButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(linkButton);
 
-    graph.startTimerHz(25);
+    graph.startTimerHz(60);
     graph.initialize(audioProcessor.clipHolder.getClipper());
     addAndMakeVisible(graph);
 }
