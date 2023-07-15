@@ -142,7 +142,6 @@ public:
                                                     1.0,
                                                     std::fabs(static_cast<double>(sample)) * multiplier);
         }
-        //else { foldbackMultiplier = 1.0; }
         return static_cast<SampleType>(juce::jmap<double>(newSample / foldbackMultiplier,
                                                           updatedSample(-1.0),
                                                           updatedSample(1.0),
@@ -151,7 +150,6 @@ public:
     }
 private:
     double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
-    //double foldbackMultiplier{ 1.0 };
 };
 //==============================================================================
 template <typename SampleType>
@@ -183,7 +181,7 @@ public:
     LinearFoldClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        newSample = static_cast<double>(sample) * multiplier;
+        auto newSample{ static_cast<double>(sample) * multiplier };
         recursiveInversion(newSample);
         if (multiplier < 1) { newSample = juce::jmap<double>(newSample, -multiplier, multiplier, -1.0, 1.0); }
         return static_cast<SampleType>(newSample);
@@ -191,6 +189,7 @@ public:
 private:
     void recursiveInversion(double& sample)
     {
+        bool negativeSign{ false };
         if (std::abs(sample) >= 1)
         {
             if (sample < 0) { negativeSign = true; }
@@ -199,9 +198,6 @@ private:
             recursiveInversion(sample);
         }
     }
-
-    double newSample{ 0.0 };
-    bool negativeSign{ false };
 };
 //==============================================================================
 class ClipHolder

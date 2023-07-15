@@ -117,7 +117,7 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
     g.setColour(juce::Colours::white);
     g.drawRoundedRectangle(bounds, cornerSize, lineThickness);
     bounds.reduce(cornerSize, cornerSize);
-    int resolution{ 40 };
+    int resolution{ 100 };
     float x{ 0.0f };
     float y{ 0.0f };
     float normalizedX{ 0.0f };
