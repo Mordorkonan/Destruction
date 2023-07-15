@@ -16,7 +16,6 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     float lineThickness{ 2.0f };
     auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(lineThickness / 2);
     g.setColour(juce::Colours::white);
-    g.drawRect(bounds);
     g.drawEllipse(bounds.toFloat().reduced(lineThickness / 2), lineThickness);
     g.drawText(static_cast<juce::String>(static_cast<int>(sliderPosProportional * 100)), bounds.reduced(30), juce::Justification::centred);
 
@@ -41,7 +40,6 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     spike.quadraticTo(p2.withX(p2.x + radius * 0.30f).withY(p2.y - radius * 0.25f), p2);
     spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
     spike.closeSubPath();
-    // размножаем шипы на 8 штук по всей окружности
     float correction = JUCE_LIVE_CONSTANT(50) * 0.01;
     g.reduceClipRegion(circumference);
     g.addTransform(juce::AffineTransform::rotation(
@@ -50,6 +48,7 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
         1.7f - sliderPosProportional * 0.7f,
         center.x,
         center.y));
+    // размножаем шипы на 8 штук по всей окружности
     for (int i = 1; i <= 8; ++i)
     {
         spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
@@ -63,7 +62,8 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (600, 300);
-
+    //==================================================
+    // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
     clipperBox.addItem("Soft Clip", soft);
     clipperBox.addItem("Fold Back", foldback);
@@ -76,12 +76,14 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
     };
     addAndMakeVisible(clipperBox);
-
+    //==================================================
+    // rotary parameters
     juce::Slider::RotaryParameters rotaryParameters;
     rotaryParameters.startAngleRadians = juce::MathConstants<float>::twoPi - 3 * 0.25f * juce::MathConstants<float>::pi;
     rotaryParameters.endAngleRadians = juce::MathConstants<float>::twoPi + 3 * 0.25f * juce::MathConstants<float>::pi;
     rotaryParameters.stopAtEnd = true;
-
+    //==================================================
+    // inputGainSlider settings
     inputGainSlider.setRotaryParameters(rotaryParameters);
     inputGainSlider.setRange(-12.0, 12.0);
     inputGainSlider.setValue(0.0);
@@ -94,8 +96,10 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
             outputGainSlider.setValue(-inputGainSlider.getValue());
         }
     };
+    inputGainSlider.setLookAndFeel(&newLNF);
     addAndMakeVisible(inputGainSlider);
-
+    //==================================================
+    // outputGainSlider settings
     outputGainSlider.setRotaryParameters(rotaryParameters);
     outputGainSlider.setRange(-12.0, 12.0);
     outputGainSlider.setValue(0.0);
@@ -108,8 +112,10 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
             inputGainSlider.setValue(-outputGainSlider.getValue());
         }
     };
+    outputGainSlider.setLookAndFeel(&newLNF);
     addAndMakeVisible(outputGainSlider);
-
+    //==================================================
+    // clipSlider settings
     clipSlider.setRotaryParameters(rotaryParameters);
     clipSlider.setRange(1.0, 10.0);
     clipSlider.setValue(1.0);
@@ -120,7 +126,8 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     };
     clipSlider.setLookAndFeel(&newLNF);
     addAndMakeVisible(clipSlider);
-
+    //==================================================
+    // linkButton settings
     linkButton.setToggleState(true, juce::NotificationType::sendNotification);
     linkButton.onStateChange = [this]()
     {
