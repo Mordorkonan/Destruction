@@ -134,14 +134,14 @@ public:
             { return (std::atan(static_cast<double>(sample) * multiplier)); };
         if (std::abs(updatedSample(sample)) >= kneeThreshold)
         {
-            foldbackMultiplier.reset(new double{ juce::jmap<double>(std::abs(updatedSample(sample)),
-                                                                    kneeThreshold,
-                                                                    1.0,
-                                                                    1.0,
-                                                                    static_cast<double>(std::abs(sample)) * multiplier) });
+            foldbackMultiplier = juce::jmap<double>(std::abs(updatedSample(sample)),
+                                                    kneeThreshold,
+                                                    1.0,
+                                                    1.0,
+                                                    static_cast<double>(std::abs(sample)) * multiplier);
         }
-        else foldbackMultiplier.reset(new double{ 1.0 });
-        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / *foldbackMultiplier,
+        else { foldbackMultiplier = 1.0; }
+        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / foldbackMultiplier,
                                                           updatedSample(-1.0),
                                                           updatedSample(1.0),
                                                           -1.0,
@@ -149,7 +149,7 @@ public:
     }
 private:
     double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
-    std::shared_ptr<double> foldbackMultiplier;
+    double foldbackMultiplier;
 };
 //==============================================================================
 template <typename SampleType>
@@ -198,7 +198,7 @@ private:
         }
     }
 
-    double newSample{ nullptr };
+    double newSample{ 0.0 };
     bool negativeSign{ false };
 };
 //==============================================================================
