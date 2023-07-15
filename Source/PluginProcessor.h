@@ -132,16 +132,18 @@ public:
     {
         auto updatedSample = [this](SampleType sample) -> double
             { return (std::atan(static_cast<double>(sample) * multiplier)); };
-        if (std::abs(updatedSample(sample)) >= kneeThreshold)
+        double newSample{ updatedSample(sample) };
+        double foldbackMultiplier{ 1.0 };
+        if (std::fabs(newSample) >= kneeThreshold)
         {
-            foldbackMultiplier = juce::jmap<double>(std::abs(updatedSample(sample)),
+            foldbackMultiplier = juce::jmap<double>(std::fabs(newSample),
                                                     kneeThreshold,
                                                     1.0,
                                                     1.0,
-                                                    static_cast<double>(std::abs(sample)) * multiplier);
+                                                    std::fabs(static_cast<double>(sample)) * multiplier);
         }
-        else { foldbackMultiplier = 1.0; }
-        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / foldbackMultiplier,
+        //else { foldbackMultiplier = 1.0; }
+        return static_cast<SampleType>(juce::jmap<double>(newSample / foldbackMultiplier,
                                                           updatedSample(-1.0),
                                                           updatedSample(1.0),
                                                           -1.0,
@@ -149,7 +151,7 @@ public:
     }
 private:
     double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
-    double foldbackMultiplier;
+    //double foldbackMultiplier{ 1.0 };
 };
 //==============================================================================
 template <typename SampleType>

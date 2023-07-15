@@ -39,7 +39,7 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     spike.quadraticTo(p2.withX(p2.x + radius * 0.30f).withY(p2.y - radius * 0.25f), p2);
     spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
     spike.closeSubPath();
-    float correction = JUCE_LIVE_CONSTANT(50) * 0.01;
+    float correction = 0.35f;// JUCE_LIVE_CONSTANT(50) * 0.01;
     g.reduceClipRegion(circumference);
     g.addTransform(juce::AffineTransform::rotation(
         juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
@@ -126,7 +126,7 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
     for (int i = 0; i < resolution; ++i)
     {
         x = static_cast<float>(i);
-        normalizedX = juce::jmap(x, 0.0f, static_cast<float>(resolution), -1.0f, 1.0f);
+        normalizedX = juce::jmap(x, 0.0f, static_cast<float>(resolution) - 1.0f, -1.0f, 1.0f);
         y = currentClipper->process(normalizedX);
         normalizedX = juce::jmap(normalizedX, -1.0f, 1.0f, bounds.getX(), bounds.getRight());
         normalizedY = juce::jmap(y, -1.0f, 1.0f, bounds.getBottom(), bounds.getY());
