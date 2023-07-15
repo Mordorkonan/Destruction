@@ -232,10 +232,6 @@ double GainController::getInputGainLevelInDb() const { return inputGainInDb; }
 void GainController::setOutputGainLevelInDb(const double& value) { outputGainInDb = value; }
 
 double GainController::getOutputGainLevelInDb() const { return outputGainInDb; }
-
-//void GainController::setLinkState(bool newState) { linkGain = newState; }
-//
-//bool GainController::getLinkState() const { return linkGain; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
