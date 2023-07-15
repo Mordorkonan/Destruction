@@ -30,6 +30,7 @@ public:
     void resized() override;
 
 private:
+    XcytheLookAndFeel_v1 newLNF;
     juce::Slider inputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                                   juce::Slider::TextEntryBoxPosition::TextBoxBelow };
     juce::Slider outputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
