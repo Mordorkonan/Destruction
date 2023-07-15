@@ -214,13 +214,17 @@ private:
     std::shared_ptr<LinearFoldClipper<float>> linearFoldClipper{ new LinearFoldClipper<float>(LINEARFOLD_COEF) };
 };
 //==============================================================================
-class ControllerLayout
+class GainController
 {
 public:
-    void setGainLevelInDecibels(const double& value);
-    double getGainLevelInDecibels() const;
+    void setInputGainLevelInDb(const double& value);
+    double getInputGainLevelInDb() const;
+
+    void setOutputGainLevelInDb(const double& value);
+    double getOutputGainLevelInDb() const;
 private:
-    double gainLevelInDecibels{ -18.0 };
+    double inputGainInDb{ -18.0 };
+    double outputGainInDb{ -18.0 };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
@@ -269,13 +273,14 @@ public:
     //==============================================================================
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
-    ControllerLayout controllerLayout;
+    GainController gainController;
     ClipHolder clipHolder;
 private:
 #if OSC
     juce::dsp::Oscillator<float> osc;
 #endif // OSC
-    juce::dsp::Gain<float> gain;
+    juce::dsp::Gain<float> inputGain;
+    juce::dsp::Gain<float> outputGain;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)

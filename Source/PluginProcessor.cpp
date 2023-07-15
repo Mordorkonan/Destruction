@@ -117,8 +117,10 @@ void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samples
         osc.prepare(spec);
         osc.setFrequency(220.0f);
     #endif
-        gain.prepare(spec);
-        gain.setGainDecibels(-18.0f);
+        inputGain.prepare(spec);
+        inputGain.setGainDecibels(gainController.getInputGainLevelInDb());
+        outputGain.prepare(spec);
+        outputGain.setGainDecibels(gainController.getOutputGainLevelInDb());
 }
 
 void DistortionTestAudioProcessor::releaseResources()
@@ -169,6 +171,14 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             buffer.setSample(1, i, sample2);
         }
     #endif
+
+    // input gain
+    auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
+    auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
+    inputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
+    inputGain.process(gainContext);
+
+    // clipping process
     auto numOfSamples = buffer.getNumSamples();
     auto numOfChannels = buffer.getNumChannels();
     float* sample = new float(0.0f);
@@ -177,16 +187,15 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         for (int j = 0; j < numOfSamples; ++j)
         {
             *sample = buffer.getSample(i, j);
-            //buffer.setSample(i, j, clipper.process(*sample));
             buffer.setSample(i, j, clipHolder.getClipper()->process(*sample));
         }
     }
     delete sample;
     sample = nullptr;
-    gain.setGainDecibels(static_cast<float>(controllerLayout.getGainLevelInDecibels()));
-    auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
-    auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
-    gain.process(gainContext);
+
+    // output gain
+    outputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
+    outputGain.process(gainContext);
     fifo.push(buffer);
 
 }
@@ -216,9 +225,13 @@ void DistortionTestAudioProcessor::setStateInformation (const void* data, int si
     // whose contents will have been created by the getStateInformation() call.
 }
 //==============================================================================
-void ControllerLayout::setGainLevelInDecibels(const double& value) { gainLevelInDecibels = value; }
+void GainController::setInputGainLevelInDb(const double& value) { inputGainInDb = value; }
 
-double ControllerLayout::getGainLevelInDecibels() const { return gainLevelInDecibels; }
+double GainController::getInputGainLevelInDb() const { return inputGainInDb; }
+
+void GainController::setOutputGainLevelInDb(const double& value) { outputGainInDb = value; }
+
+double GainController::getOutputGainLevelInDb() const { return outputGainInDb; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
