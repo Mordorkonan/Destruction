@@ -38,13 +38,29 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     inputGainSlider.setRotaryParameters(rotaryParameters);
     inputGainSlider.setRange(-12.0, 12.0);
     inputGainSlider.setValue(0.0);
-    inputGainSlider.onValueChange = [this]() { audioProcessor.gainController.setInputGainLevelInDb(inputGainSlider.getValue()); };
+    inputGainSlider.onValueChange = [this]()
+    {
+        audioProcessor.gainController.setInputGainLevelInDb(inputGainSlider.getValue());
+        if (linkButton.getToggleState())
+        {
+            //audioProcessor.gainController.setOutputGainLevelInDb(-inputGainSlider.getValue());
+            outputGainSlider.setValue(-inputGainSlider.getValue());
+        }
+    };
     addAndMakeVisible(inputGainSlider);
 
     outputGainSlider.setRotaryParameters(rotaryParameters);
     outputGainSlider.setRange(-12.0, 12.0);
     outputGainSlider.setValue(0.0);
-    outputGainSlider.onValueChange = [this]() { audioProcessor.gainController.setOutputGainLevelInDb(outputGainSlider.getValue()); };
+    outputGainSlider.onValueChange = [this]()
+    {
+        audioProcessor.gainController.setOutputGainLevelInDb(outputGainSlider.getValue());
+        if (linkButton.getToggleState())
+        {
+            //audioProcessor.gainController.setInputGainLevelInDb(-outputGainSlider.getValue());
+            inputGainSlider.setValue(-outputGainSlider.getValue());
+        }
+    };
     addAndMakeVisible(outputGainSlider);
 
     clipSlider.setRotaryParameters(rotaryParameters);
@@ -55,6 +71,14 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
     };
     addAndMakeVisible(clipSlider);
+
+    linkButton.setToggleState(true, juce::NotificationType::sendNotification);
+    linkButton.onStateChange = [this]()
+    {
+        if (linkButton.getToggleState()) { outputGainSlider.setValue(-inputGainSlider.getValue()); }
+        //audioProcessor.gainController.setLinkState(linkButton.getToggleState());
+    };
+    addAndMakeVisible(linkButton);
 }
 
 DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
@@ -74,7 +98,8 @@ void DistortionTestAudioProcessorEditor::resized()
     inputGainSlider.setBounds(bounds);
     clipSlider.setBounds(bounds.withX(bounds.getRight() + 10));
     outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
-    clipperBox.setBounds(bounds.withX(outputGainSlider.getBounds().getRight() + 10));
+    clipperBox.setBounds(bounds.withHeight(20).withX(outputGainSlider.getBounds().getRight() + 10));
+    linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
 
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..

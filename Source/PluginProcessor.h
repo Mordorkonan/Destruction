@@ -222,9 +222,13 @@ public:
 
     void setOutputGainLevelInDb(const double& value);
     double getOutputGainLevelInDb() const;
+
+    //bool getLinkState() const;
+    //void setLinkState(bool newState);
 private:
-    double inputGainInDb{ -18.0 };
-    double outputGainInDb{ -18.0 };
+    double inputGainInDb{ 0.0 };
+    double outputGainInDb{ 0.0 };
+    //bool linkGain{ false };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor

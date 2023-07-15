@@ -118,9 +118,9 @@ void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samples
         osc.setFrequency(220.0f);
     #endif
         inputGain.prepare(spec);
-        inputGain.setGainDecibels(gainController.getInputGainLevelInDb());
+        inputGain.setGainDecibels(static_cast<float>(gainController.getInputGainLevelInDb()));
         outputGain.prepare(spec);
-        outputGain.setGainDecibels(gainController.getOutputGainLevelInDb());
+        outputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
 }
 
 void DistortionTestAudioProcessor::releaseResources()
@@ -175,7 +175,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     // input gain
     auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
     auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
-    inputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
+    inputGain.setGainDecibels(static_cast<float>(gainController.getInputGainLevelInDb()));
     inputGain.process(gainContext);
 
     // clipping process
@@ -232,6 +232,10 @@ double GainController::getInputGainLevelInDb() const { return inputGainInDb; }
 void GainController::setOutputGainLevelInDb(const double& value) { outputGainInDb = value; }
 
 double GainController::getOutputGainLevelInDb() const { return outputGainInDb; }
+
+//void GainController::setLinkState(bool newState) { linkGain = newState; }
+//
+//bool GainController::getLinkState() const { return linkGain; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
