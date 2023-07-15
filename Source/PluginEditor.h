@@ -32,9 +32,9 @@ public:
 private:
     XcytheLookAndFeel_v1 newLNF;
     juce::Slider inputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                  juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+                                  juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::Slider outputGainSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                   juce::Slider::TextEntryBoxPosition::TextBoxBelow };
+                                   juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::Slider clipSlider{ juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                              juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::ComboBox clipperBox{ "Clippers" };
