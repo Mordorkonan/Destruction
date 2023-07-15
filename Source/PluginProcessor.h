@@ -132,16 +132,17 @@ public:
     {
         auto updatedSample = [this](SampleType sample) -> double
             { return (std::atan(static_cast<double>(sample) * multiplier)); };
-        if (std::abs(updatedSample(sample)) >= kneeThreshold)
+        double newSample{ updatedSample(sample) };
+        double foldbackMultiplier{ 1.0 };
+        if (std::fabs(newSample) >= kneeThreshold)
         {
-            foldbackMultiplier.reset(new double{ juce::jmap<double>(std::abs(updatedSample(sample)),
-                                                                    kneeThreshold,
-                                                                    1.0,
-                                                                    1.0,
-                                                                    static_cast<double>(std::abs(sample)) * multiplier) });
+            foldbackMultiplier = juce::jmap<double>(std::fabs(newSample),
+                                                    kneeThreshold,
+                                                    1.0,
+                                                    1.0,
+                                                    std::fabs(static_cast<double>(sample)) * multiplier);
         }
-        else foldbackMultiplier.reset(new double{ 1.0 });
-        return static_cast<SampleType>(juce::jmap<double>(updatedSample(sample) / *foldbackMultiplier,
+        return static_cast<SampleType>(juce::jmap<double>(newSample / foldbackMultiplier,
                                                           updatedSample(-1.0),
                                                           updatedSample(1.0),
                                                           -1.0,
@@ -149,7 +150,6 @@ public:
     }
 private:
     double kneeThreshold{ 0.5 }; // влияет на резкость звучания. Должен быть от 0,2 до 0,7 (найдено эмпирически)
-    std::shared_ptr<double> foldbackMultiplier;
 };
 //==============================================================================
 template <typename SampleType>
@@ -181,25 +181,23 @@ public:
     LinearFoldClipper(double&& corrCoef = 1.0) : Clipper<SampleType>(std::move(corrCoef)) { }
     SampleType process(SampleType& sample) override
     {
-        newSample.reset(new double{ static_cast<double>(sample) * multiplier });
-        recursiveInversion(newSample.get());
-        if (multiplier < 1) { *newSample = juce::jmap<double>(*newSample, -multiplier, multiplier, -1.0, 1.0); }
-        return static_cast<SampleType>(*newSample);
+        auto newSample{ static_cast<double>(sample) * multiplier };
+        recursiveInversion(newSample);
+        if (multiplier < 1) { newSample = juce::jmap<double>(newSample, -multiplier, multiplier, -1.0, 1.0); }
+        return static_cast<SampleType>(newSample);
     }
 private:
-    void recursiveInversion(double* sample)
+    void recursiveInversion(double& sample)
     {
-        if (std::abs(*sample) >= 1)
+        bool negativeSign{ false };
+        if (std::abs(sample) >= 1)
         {
-            if (*sample < 0) { negativeSign = true; }
+            if (sample < 0) { negativeSign = true; }
             else { negativeSign = false; }
-            newSample.reset(new double((1.0 - (std::abs(*sample) - 1)) * (negativeSign ? -1.0 : 1.0)));
-            recursiveInversion(newSample.get());
+            sample = (1.0 - (std::abs(sample) - 1)) * (negativeSign ? -1.0 : 1.0);
+            recursiveInversion(sample);
         }
     }
-
-    std::shared_ptr<double> newSample{ nullptr };
-    bool negativeSign{ false };
 };
 //==============================================================================
 class ClipHolder

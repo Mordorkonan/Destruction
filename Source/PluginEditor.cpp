@@ -39,7 +39,7 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     spike.quadraticTo(p2.withX(p2.x + radius * 0.30f).withY(p2.y - radius * 0.25f), p2);
     spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
     spike.closeSubPath();
-    float correction = JUCE_LIVE_CONSTANT(50) * 0.01;
+    float correction = 0.35f;// JUCE_LIVE_CONSTANT(50) * 0.01;
     g.reduceClipRegion(circumference);
     g.addTransform(juce::AffineTransform::rotation(
         juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
@@ -90,12 +90,58 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
     g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
 }
 //==============================================================================
+void TransientFunctionGraph::initialize(Clipper<float>* clipper) { currentClipper = clipper; }
+
+void TransientFunctionGraph::update() { needUpdate = true; }
+
+void TransientFunctionGraph::timerCallback()
+{
+    if (needUpdate)
+    {
+        needUpdate = false;
+        time = juce::Time::currentTimeMillis();
+        repaint();
+    }
+}
+
+void TransientFunctionGraph::paint(juce::Graphics& g)
+{
+    float lineThickness{ 2.0f };
+    auto bounds{ getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
+    float cornerSize{ 4.0f };
+    g.setColour(juce::Colours::black);
+    g.fillAll();
+    g.setColour(juce::Colours::darkgrey);
+    g.drawLine(bounds.getX(), bounds.getCentreY(), bounds.getRight(), bounds.getCentreY());
+    g.drawLine(bounds.getCentreX(), bounds.getY(), bounds.getCentreX(), bounds.getBottom());
+    g.setColour(juce::Colours::white);
+    g.drawRoundedRectangle(bounds, cornerSize, lineThickness);
+    bounds.reduce(cornerSize, cornerSize);
+    int resolution{ 100 };
+    float x{ 0.0f };
+    float y{ 0.0f };
+    float normalizedX{ 0.0f };
+    float normalizedY{ 0.0f };
+    juce::Path graph;
+    for (int i = 0; i < resolution; ++i)
+    {
+        x = static_cast<float>(i);
+        normalizedX = juce::jmap(x, 0.0f, static_cast<float>(resolution) - 1.0f, -1.0f, 1.0f);
+        y = currentClipper->process(normalizedX);
+        normalizedX = juce::jmap(normalizedX, -1.0f, 1.0f, bounds.getX(), bounds.getRight());
+        normalizedY = juce::jmap(y, -1.0f, 1.0f, bounds.getBottom(), bounds.getY());
+        if (i == 0) { graph.startNewSubPath(normalizedX, normalizedY); }
+        else { graph.lineTo(normalizedX, normalizedY); }
+    }
+    g.strokePath(graph, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
+}
+//==============================================================================
 DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (600, 300);
+    setSize (1000, 300);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
@@ -108,6 +154,8 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     {
         audioProcessor.clipHolder.setClipper(clipperBox.getSelectedItemIndex());
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
+        graph.initialize(audioProcessor.clipHolder.getClipper());
+        graph.update();
     };
     addAndMakeVisible(clipperBox);
     //==================================================
@@ -157,6 +205,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipSlider.onValueChange = [this]()
     {
         audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
+        graph.update();
     };
     clipSlider.setLookAndFeel(&newLNF);
     addAndMakeVisible(clipSlider);
@@ -176,6 +225,10 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     };
     linkButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(linkButton);
+
+    graph.startTimerHz(60);
+    graph.initialize(audioProcessor.clipHolder.getClipper());
+    addAndMakeVisible(graph);
 }
 
 DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
@@ -197,6 +250,7 @@ void DistortionTestAudioProcessorEditor::resized()
     outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
     clipperBox.setBounds(bounds.withHeight(28).withX(outputGainSlider.getBounds().getRight() + 10));
     linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
+    graph.setBounds(500, 75, 400, 100);
 
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
