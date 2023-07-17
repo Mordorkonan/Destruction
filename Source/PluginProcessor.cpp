@@ -172,30 +172,33 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         }
     #endif
 
-    // input gain
-    auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
-    auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
-    inputGain.setGainDecibels(static_cast<float>(gainController.getInputGainLevelInDb()));
-    inputGain.process(gainContext);
-
-    // clipping process
-    auto numOfSamples = buffer.getNumSamples();
-    auto numOfChannels = buffer.getNumChannels();
-    float* sample = new float(0.0f);
-    for (int i = 0; i < numOfChannels; ++i)
+    if (!gainController.getBypassState() && buffer.getNumSamples() != 0)
     {
-        for (int j = 0; j < numOfSamples; ++j)
-        {
-            *sample = buffer.getSample(i, j);
-            buffer.setSample(i, j, clipHolder.getClipper()->process(*sample));
-        }
-    }
-    delete sample;
-    sample = nullptr;
+        // input gain
+        auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
+        auto gainContext{ juce::dsp::ProcessContextReplacing<float>(audioBlock) };
+        inputGain.setGainDecibels(static_cast<float>(gainController.getInputGainLevelInDb()));
+        inputGain.process(gainContext);
 
-    // output gain
-    outputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
-    outputGain.process(gainContext);
+        // clipping process
+        auto numOfSamples = buffer.getNumSamples();
+        auto numOfChannels = buffer.getNumChannels();
+        float* sample = new float(0.0f);
+        for (int i = 0; i < numOfChannels; ++i)
+        {
+            for (int j = 0; j < numOfSamples; ++j)
+            {
+                *sample = buffer.getSample(i, j);
+                buffer.setSample(i, j, clipHolder.getClipper()->process(*sample));
+            }
+        }
+        delete sample;
+        sample = nullptr;
+
+        // output gain
+        outputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
+        outputGain.process(gainContext);
+    }
     fifo.push(buffer);
 
 }
@@ -232,6 +235,10 @@ double GainController::getInputGainLevelInDb() const { return inputGainInDb; }
 void GainController::setOutputGainLevelInDb(const double& value) { outputGainInDb = value; }
 
 double GainController::getOutputGainLevelInDb() const { return outputGainInDb; }
+
+void GainController::setBypassState(const bool& newState) { bypassed = newState; }
+
+bool GainController::getBypassState() const { return bypassed; }
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

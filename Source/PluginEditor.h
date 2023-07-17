@@ -54,6 +54,7 @@ private:
                              juce::Slider::TextEntryBoxPosition::NoTextBox };
     juce::ComboBox clipperBox{ "Clippers" };
     juce::ToggleButton linkButton{ "Link" };
+    juce::ToggleButton bypassButton{ "bypass" };
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DistortionTestAudioProcessor& audioProcessor;

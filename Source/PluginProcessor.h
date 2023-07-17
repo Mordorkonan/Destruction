@@ -224,9 +224,13 @@ public:
 
     void setOutputGainLevelInDb(const double& value);
     double getOutputGainLevelInDb() const;
+    
+    void setBypassState(const bool& newState);
+    bool getBypassState() const;
 private:
     double inputGainInDb{ 0.0 };
     double outputGainInDb{ 0.0 };
+    bool bypassed{ false };
 };
 //==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
