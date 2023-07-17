@@ -117,7 +117,7 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
     g.setColour(juce::Colours::white);
     g.drawRoundedRectangle(bounds, cornerSize, lineThickness);
     bounds.reduce(cornerSize, cornerSize);
-    int resolution{ 100 };
+    int resolution{ 400 }; // соответствует ширине графика передаточной функции
     float x{ 0.0f };
     float y{ 0.0f };
     float normalizedX{ 0.0f };
@@ -226,6 +226,15 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     linkButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(linkButton);
 
+    //==================================================
+    // bypasskButton settings
+    bypassButton.setToggleState(false, juce::NotificationType::sendNotification);
+    bypassButton.onStateChange = [this]() { audioProcessor.gainController.setBypassState(bypassButton.getToggleState()); };
+    bypassButton.setLookAndFeel(&newLNF);
+    addAndMakeVisible(bypassButton);
+
+    //==================================================
+    // graph settings
     graph.startTimerHz(60);
     graph.initialize(audioProcessor.clipHolder.getClipper());
     addAndMakeVisible(graph);
@@ -250,6 +259,7 @@ void DistortionTestAudioProcessorEditor::resized()
     outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
     clipperBox.setBounds(bounds.withHeight(28).withX(outputGainSlider.getBounds().getRight() + 10));
     linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
+    bypassButton.setBounds(linkButton.getBounds().withY(linkButton.getBounds().getBottom() + 10));
     graph.setBounds(500, 75, 400, 100);
 
     // This is generally where you'll want to lay out the positions of any
