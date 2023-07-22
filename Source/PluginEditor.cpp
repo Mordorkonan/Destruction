@@ -16,8 +16,6 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     float lineThickness{ 2.0f };
     auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(lineThickness / 2);
     g.setColour(juce::Colours::white);
-    g.drawEllipse(bounds.toFloat().reduced(lineThickness / 2), lineThickness);
-    g.drawText(static_cast<juce::String>(static_cast<int>(sliderPosProportional * 100)), bounds.reduced(30), juce::Justification::centred);
 
     juce::Point<float> center{ bounds.getCentre() };
     float radius{ width > height ? (bounds.getHeight() / 2) : (bounds.getWidth() / 2) };
@@ -40,14 +38,25 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
     spike.closeSubPath();
     float correction = 0.35f;// JUCE_LIVE_CONSTANT(50) * 0.01;
-    g.reduceClipRegion(circumference);
     g.addTransform(juce::AffineTransform::rotation(
         juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
-    g.addTransform(juce::AffineTransform::scale(1.6f - sliderPosProportional * 0.6f,
-        1.7f - sliderPosProportional * 0.7f,
-        center.x,
-        center.y));
+    g.setColour(juce::Colours::darkgrey);
     // размножаем шипы на 8 штук по всей окружности
+    for (int i = 1; i <= 8; ++i)
+    {
+        spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
+        g.fillPath(spike);
+    }
+    g.reduceClipRegion(circumference);
+    correction = JUCE_LIVE_CONSTANT(27) * 0.01;
+    g.addTransform(juce::AffineTransform::rotation(
+        juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
+    g.addTransform(juce::AffineTransform::scale(1.7f - sliderPosProportional * 0.7f,
+                                                1.7f - sliderPosProportional * 0.7f,
+                                                center.x,
+                                                center.y));
+    // размножаем шипы на 8 штук по всей окружности
+    g.setColour(juce::Colours::white);
     for (int i = 1; i <= 8; ++i)
     {
         spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
