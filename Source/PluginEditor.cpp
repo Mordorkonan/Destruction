@@ -48,7 +48,7 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
         g.fillPath(spike);
     }
     g.reduceClipRegion(circumference);
-    correction = JUCE_LIVE_CONSTANT(27) * 0.01;
+    correction = 0.27f;// JUCE_LIVE_CONSTANT(27) * 0.01;
     g.addTransform(juce::AffineTransform::rotation(
         juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
     g.addTransform(juce::AffineTransform::scale(1.7f - sliderPosProportional * 0.7f,
@@ -68,7 +68,8 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
                                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
     float lineThickness{ 1.0f };
-    auto fontSize = juce::jmin(16.0f, static_cast<float>(togglebutton.getHeight() * 0.75));
+    juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
+    font.setHeight(FONT_HEIGHT);
     auto bounds{ togglebutton.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
 
     // отрисовка 6-угольного контура кнопки
@@ -94,9 +95,35 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
     g.fillPath(contour);
     g.setColour(juce::Colours::white);
     g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
-
-    g.setFont(fontSize);
+    g.setFont(font);
     g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
+}
+//==============================================================================
+void XcytheRotarySlider::initialize(juce::Slider::RotaryParameters& rp, double minValue, double maxValue, double defaultValue,
+                                    juce::String suffix, juce::String newName, juce::LookAndFeel* lnf, juce::Font& font)
+{
+    slider.setRotaryParameters(rp);
+    slider.setRange(minValue, maxValue);
+    slider.setValue(defaultValue);
+    slider.setDoubleClickReturnValue(true, defaultValue);
+    slider.setLookAndFeel(lnf);
+    nameText.setFont(font);
+    nameText.setText(newName, juce::NotificationType::dontSendNotification);
+    nameText.setJustificationType(juce::Justification::centredTop);
+    valueText.setFont(font);
+    valueText.setText(juce::String(slider.getValue(), 1) + suffix, juce::NotificationType::dontSendNotification);
+    valueText.setJustificationType(juce::Justification::centredTop);
+    addAndMakeVisible(slider);
+    addAndMakeVisible(nameText);
+    addAndMakeVisible(valueText);
+}
+
+void XcytheRotarySlider::resized()
+{
+    auto bounds{ getLocalBounds() };
+    nameText.setBounds(bounds.removeFromTop(LABEL_HEIGHT));
+    valueText.setBounds(bounds.removeFromBottom(LABEL_HEIGHT));
+    slider.setBounds(bounds);
 }
 //==============================================================================
 void TransientFunctionGraph::initialize(Clipper<float>* clipper) { currentClipper = clipper; }
@@ -113,18 +140,32 @@ void TransientFunctionGraph::timerCallback()
     }
 }
 
-void TransientFunctionGraph::paint(juce::Graphics& g)
+void TransientFunctionGraph::drawBackground()
 {
-    float lineThickness{ 2.0f };
-    auto bounds{ getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
-    float cornerSize{ 4.0f };
-    g.setColour(juce::Colours::black);
+    // рендеринг статических данных в изображение для вызова в paint
+    auto bounds{ getLocalBounds().toFloat() };
+    bkgd = juce::Image(juce::Image::PixelFormat::ARGB,
+                       static_cast<int>(bounds.getWidth()),
+                       static_cast<int>(bounds.getHeight()),
+                       true);
+    juce::Graphics g{ bkgd }; // сначала создаём изображение с баундами
+    bounds.reduce(lineThickness * 0.5f, lineThickness * 0.5f); // затем режем баунды по толщине линии, чтобы влез контур
+    g.addTransform(juce::AffineTransform::scale(juce::Desktop::getInstance().getGlobalScaleFactor()));
+    g.setColour(juce::Colours::transparentWhite);
     g.fillAll();
+    g.setColour(juce::Colours::black);
+    g.fillRoundedRectangle(bounds, cornerSize);
     g.setColour(juce::Colours::darkgrey);
     g.drawLine(bounds.getX(), bounds.getCentreY(), bounds.getRight(), bounds.getCentreY());
     g.drawLine(bounds.getCentreX(), bounds.getY(), bounds.getCentreX(), bounds.getBottom());
     g.setColour(juce::Colours::white);
     g.drawRoundedRectangle(bounds, cornerSize, lineThickness);
+}
+
+void TransientFunctionGraph::paint(juce::Graphics& g)
+{
+    auto bounds{ getLocalBounds().toFloat().withTrimmedTop(LABEL_HEIGHT) };
+    g.drawImage(bkgd, bounds);
     bounds.reduce(cornerSize, cornerSize);
     int resolution{ 400 }; // соответствует ширине графика передаточной функции
     float x{ 0.0f };
@@ -142,15 +183,24 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
         if (i == 0) { graph.startNewSubPath(normalizedX, normalizedY); }
         else { graph.lineTo(normalizedX, normalizedY); }
     }
+    g.setColour(juce::Colours::white);
     g.strokePath(graph, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
+}
+
+void TransientFunctionGraph::resized()
+{
+    auto bounds{ getLocalBounds() };
+    label.setBounds(bounds.removeFromTop(LABEL_HEIGHT));
+    label.setJustificationType(juce::Justification::centredTop);
+    drawBackground();
 }
 //==============================================================================
 DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
     setSize (1000, 300);
+    juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
+    font.setHeight(18.0f);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
@@ -162,7 +212,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipperBox.onChange = [this]()
     {
         audioProcessor.clipHolder.setClipper(clipperBox.getSelectedItemIndex());
-        audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
+        audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.slider.getValue());
         graph.initialize(audioProcessor.clipHolder.getClipper());
         graph.update();
     };
@@ -174,49 +224,41 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     rotaryParameters.endAngleRadians = juce::MathConstants<float>::twoPi + 3 * 0.25f * juce::MathConstants<float>::pi;
     rotaryParameters.stopAtEnd = true;
     //==================================================
-    // inputGainSlider settings
-    inputGainSlider.setRotaryParameters(rotaryParameters);
-    inputGainSlider.setRange(-12.0, 12.0);
-    inputGainSlider.setValue(0.0);
-    inputGainSlider.setDoubleClickReturnValue(true, 0.0);
-    inputGainSlider.onValueChange = [this]()
+    // sliders settings
+    inputGainSlider.initialize(rotaryParameters, -12.0, 12.0, 0.0, "dB", "IN", &newLNF, font);
+    outputGainSlider.initialize(rotaryParameters, -12.0, 12.0, 0.0, "dB", "OUT", &newLNF, font);
+    clipSlider.initialize(rotaryParameters, 1.0, 10.0, 1.0, "", "CLIP", &newLNF, font);
+    inputGainSlider.slider.onValueChange = [this]()
     {
-        audioProcessor.gainController.setInputGainLevelInDb(inputGainSlider.getValue());
+        double newValue{ inputGainSlider.slider.getValue() };
+        inputGainSlider.valueText.setText(juce::String(newValue, 1) + " dB",
+                                          juce::NotificationType::dontSendNotification);
+        audioProcessor.gainController.setInputGainLevelInDb(newValue);
         if (linkButton.getToggleState())
         {
-            outputGainSlider.setValue(-inputGainSlider.getValue());
+            outputGainSlider.slider.setValue(-newValue);
         }
     };
-    inputGainSlider.setLookAndFeel(&newLNF);
-    addAndMakeVisible(inputGainSlider);
-    //==================================================
-    // outputGainSlider settings
-    outputGainSlider.setRotaryParameters(rotaryParameters);
-    outputGainSlider.setRange(-12.0, 12.0);
-    outputGainSlider.setValue(0.0);
-    outputGainSlider.setDoubleClickReturnValue(true, 0.0);
-    outputGainSlider.onValueChange = [this]()
+    outputGainSlider.slider.onValueChange = [this]()
     {
-        audioProcessor.gainController.setOutputGainLevelInDb(outputGainSlider.getValue());
+        double newValue{ outputGainSlider.slider.getValue() };
+        outputGainSlider.valueText.setText(juce::String(newValue, 1) + " dB",
+                                           juce::NotificationType::dontSendNotification);
+        audioProcessor.gainController.setOutputGainLevelInDb(newValue);
         if (linkButton.getToggleState())
         {
-            inputGainSlider.setValue(-outputGainSlider.getValue());
+            inputGainSlider.slider.setValue(-newValue);
         }
     };
-    outputGainSlider.setLookAndFeel(&newLNF);
-    addAndMakeVisible(outputGainSlider);
-    //==================================================
-    // clipSlider settings
-    clipSlider.setRotaryParameters(rotaryParameters);
-    clipSlider.setRange(1.0, 10.0);
-    clipSlider.setValue(1.0);
-    clipSlider.setDoubleClickReturnValue(true, 1.0);
-    clipSlider.onValueChange = [this]()
+    clipSlider.slider.onValueChange = [this]()
     {
-        audioProcessor.clipHolder.getClipper()->updateMultiplier(clipSlider.getValue());
+        double newValue{ clipSlider.slider.getValue() };
+        clipSlider.valueText.setText(juce::String(newValue, 1), juce::NotificationType::dontSendNotification);
+        audioProcessor.clipHolder.getClipper()->updateMultiplier(newValue);
         graph.update();
     };
-    clipSlider.setLookAndFeel(&newLNF);
+    addAndMakeVisible(inputGainSlider);
+    addAndMakeVisible(outputGainSlider);
     addAndMakeVisible(clipSlider);
     //==================================================
     // linkButton settings
@@ -225,11 +267,11 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     {
         if (linkButton.getToggleState())
         {
-            if (inputGainSlider.getValue() < 0)
+            if (inputGainSlider.slider.getValue() < 0)
             {
-                inputGainSlider.setValue(-outputGainSlider.getValue());
+                inputGainSlider.slider.setValue(-outputGainSlider.slider.getValue());
             }
-            else { outputGainSlider.setValue(-inputGainSlider.getValue()); }            
+            else { outputGainSlider.slider.setValue(-inputGainSlider.slider.getValue()); }
         }
     };
     linkButton.setLookAndFeel(&newLNF);
@@ -246,6 +288,8 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     // graph settings
     graph.startTimerHz(60);
     graph.initialize(audioProcessor.clipHolder.getClipper());
+    graph.label.setFont(font);
+    graph.addAndMakeVisible(graph.label);
     addAndMakeVisible(graph);
 }
 
@@ -256,21 +300,17 @@ DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
 //==============================================================================
 void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll (juce::Colours::black);
 }
 
 void DistortionTestAudioProcessorEditor::resized()
 {
-    auto bounds{ juce::Rectangle<int>(75, 75, 100, 100) };
+    auto bounds{ juce::Rectangle<int>(75, 75, 100, 150) };
     inputGainSlider.setBounds(bounds);
     clipSlider.setBounds(bounds.withX(bounds.getRight() + 10));
     outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
     clipperBox.setBounds(bounds.withHeight(28).withX(outputGainSlider.getBounds().getRight() + 10));
     linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
     bypassButton.setBounds(linkButton.getBounds().withY(linkButton.getBounds().getBottom() + 10));
-    graph.setBounds(500, 75, 400, 100);
-
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+    graph.setBounds(500, 75, 400, 125);
 }
