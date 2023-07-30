@@ -167,7 +167,7 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
     auto bounds{ getLocalBounds().toFloat().withTrimmedTop(LABEL_HEIGHT) };
     g.drawImage(bkgd, bounds);
     bounds.reduce(cornerSize, cornerSize);
-    int resolution{ 400 }; // соответствует ширине графика передаточной функции
+    int resolution{ 400 }; // кратна ширине графика передаточной функции
     float x{ 0.0f };
     float y{ 0.0f };
     float normalizedX{ 0.0f };
@@ -198,7 +198,7 @@ void TransientFunctionGraph::resized()
 DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setSize (1000, 300);
+    setSize (660, 210);
     juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
     font.setHeight(18.0f);
     //==================================================
@@ -305,12 +305,23 @@ void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
 
 void DistortionTestAudioProcessorEditor::resized()
 {
-    auto bounds{ juce::Rectangle<int>(75, 75, 100, 150) };
-    inputGainSlider.setBounds(bounds);
-    clipSlider.setBounds(bounds.withX(bounds.getRight() + 10));
-    outputGainSlider.setBounds(bounds.withX(clipSlider.getBounds().getRight() + 10));
-    clipperBox.setBounds(bounds.withHeight(28).withX(outputGainSlider.getBounds().getRight() + 10));
-    linkButton.setBounds(clipperBox.getBounds().withY(clipperBox.getBounds().getBottom() + 10));
-    bypassButton.setBounds(linkButton.getBounds().withY(linkButton.getBounds().getBottom() + 10));
-    graph.setBounds(500, 75, 400, 125);
+    int spacing{ 10 };
+    int buttonHeight{ 24 };
+    int componentWidth{ 100 };
+    auto bounds{ getLocalBounds() };
+    bounds.removeFromTop(40); // под лого и название
+    bounds.reduce(spacing, spacing);
+    outputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
+    bounds.removeFromRight(spacing);
+    clipSlider.setBounds(bounds.removeFromRight(componentWidth));
+    bounds.removeFromRight(spacing);
+    inputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
+    bounds.removeFromRight(spacing);
+    graph.setBounds(bounds.removeFromTop(bounds.getHeight() - spacing - buttonHeight));
+    bounds.removeFromTop(spacing);
+    clipperBox.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(spacing);
+    bypassButton.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(spacing);
+    linkButton.setBounds(bounds.removeFromLeft(componentWidth));
 }
