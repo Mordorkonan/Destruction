@@ -172,7 +172,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         }
     #endif
     // указываем условный порог магнитуды в 0,05 чтобы снизить нагрузку на процессор на холостом ходе
-    if (!gainController.getBypassState() && buffer.getMagnitude(0, buffer.getNumSamples()) >= 0.05)
+    if (!gainController.getBypassState() && buffer.getMagnitude(0, buffer.getNumSamples()) >= 0.00001)
     {
         // input gain
         auto audioBlock{ juce::dsp::AudioBlock<float>(buffer) };
