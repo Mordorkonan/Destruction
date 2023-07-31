@@ -9,6 +9,12 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 //==============================================================================
+XcytheLookAndFeel_v1::XcytheLookAndFeel_v1()
+{
+    font = juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize);
+    font.setHeight(FONT_HEIGHT);
+}
+
 void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                                             float sliderPosProportional, float rotaryStartAngle,
                                             float rotaryEndAngle, juce::Slider& slider)
@@ -68,21 +74,8 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
                                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
     float lineThickness{ 1.0f };
-    juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
-    font.setHeight(FONT_HEIGHT);
     auto bounds{ togglebutton.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
-
-    // отрисовка 6-угольного контура кнопки
-    juce::Path contour;
-    auto chamfer{ bounds.getHeight() * 0.5f };
-    contour.startNewSubPath(bounds.getX(), chamfer);
-    contour.lineTo(bounds.getX() + chamfer, bounds.getY());
-    contour.lineTo(bounds.getRight() - chamfer, bounds.getY());
-    contour.lineTo(bounds.getRight(), bounds.getY() + chamfer);
-    contour.lineTo(bounds.getRight() - chamfer, bounds.getHeight());
-    contour.lineTo(bounds.getX() + chamfer, bounds.getHeight());
-    contour.closeSubPath();
-
+    juce::Path contour{ createFrame(bounds) };
     // определяем цвет в зависимости от состояния кнопки
     auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
                         togglebutton.hasKeyboardFocus(true) ? 1.3f : 1.0f)
@@ -97,6 +90,88 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
     g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
     g.setFont(font);
     g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
+}
+
+void XcytheLookAndFeel_v1::drawComboBox(juce::Graphics& g, int width, int height, bool,
+                  int, int, int, int, juce::ComboBox& box)
+{
+    float lineThickness{ 1.0f };
+    auto bounds{ box.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
+    juce::Path contour{ createFrame(bounds) };
+    g.setColour(juce::Colours::darkgrey.withAlpha(0.5f));
+    g.fillPath(contour);
+    g.setColour(juce::Colours::white);
+    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
+}
+
+void XcytheLookAndFeel_v1::positionComboBoxText(juce::ComboBox& box, juce::Label& label)
+{
+    label.setBounds(box.getLocalBounds().reduced(1));
+    label.setFont(font);
+    label.setJustificationType(juce::Justification::centred);
+}
+
+void XcytheLookAndFeel_v1::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
+                                             const bool isSeparator, const bool isActive,
+                                             const bool isHighlighted, const bool isTicked,
+                                             const bool hasSubMenu, const juce::String& text,
+                                             const juce::String& shortcutKeyText,
+                                             const juce::Drawable* icon, const juce::Colour* const textColourToUse)
+{
+    auto textColour = (textColourToUse == nullptr ? findColour(juce::PopupMenu::textColourId)
+                       : *textColourToUse);
+    auto r = area.reduced(1);
+    juce::Path contour{ createFrame(r.toFloat()) };
+    if (isHighlighted && isActive)
+    {
+        g.setColour(juce::Colours::grey);
+        g.strokePath(contour, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved));
+        g.setColour(findColour(juce::PopupMenu::highlightedTextColourId)); // нужно менять цвет для текста
+    }
+    else
+    {
+        g.setColour(textColour.withMultipliedAlpha(isActive ? 1.0f : 0.5f));
+    }
+    g.setFont(font);
+    if (isTicked)
+    {
+        g.setColour(juce::Colours::white);
+        g.strokePath(contour, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved));
+    }
+    g.drawFittedText(text, r, juce::Justification::centred, 1);
+    if (shortcutKeyText.isNotEmpty())
+    {
+        auto f2 = font;
+        f2.setHeight(f2.getHeight() * 0.75f);
+        f2.setHorizontalScale(0.95f);
+        g.setFont(f2);
+        g.drawText(shortcutKeyText, r, juce::Justification::centredRight, true);
+    }
+}
+
+void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width, int height)
+{
+    auto background{ juce::Colours::black.contrasting(0.15f) };
+    g.fillAll(background);   
+#if ! JUCE_MAC
+    g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
+    g.drawRect(0, 0, width, height);
+#endif
+}
+
+juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds)
+{
+    // отрисовка 6-угольного контура
+    juce::Path contour;
+    auto chamfer{ bounds.getHeight() * 0.5f };
+    contour.startNewSubPath(bounds.getX(), chamfer);
+    contour.lineTo(bounds.getX() + chamfer, bounds.getY());
+    contour.lineTo(bounds.getRight() - chamfer, bounds.getY());
+    contour.lineTo(bounds.getRight(), bounds.getY() + chamfer);
+    contour.lineTo(bounds.getRight() - chamfer, bounds.getHeight());
+    contour.lineTo(bounds.getX() + chamfer, bounds.getHeight());
+    contour.closeSubPath();
+    return contour;
 }
 //==============================================================================
 void XcytheRotarySlider::initialize(juce::Slider::RotaryParameters& rp, double minValue, double maxValue, double defaultValue,
@@ -216,6 +291,7 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
         graph.initialize(audioProcessor.clipHolder.getClipper());
         graph.update();
     };
+    clipperBox.setLookAndFeel(&newLNF);
     addAndMakeVisible(clipperBox);
     //==================================================
     // rotary parameters
