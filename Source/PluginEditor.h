@@ -85,8 +85,8 @@ private:
     XcytheRotarySlider outputGainSlider;
     XcytheRotarySlider clipSlider;
     juce::ComboBox clipperBox{ "Clippers" };
-    juce::ToggleButton linkButton{ "LINK" };
-    juce::ToggleButton bypassButton{ "BYPASS" };
+    juce::ToggleButton linkButton{ "Link" };
+    juce::ToggleButton bypassButton{ "Bypass" };
 
     DistortionTestAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;

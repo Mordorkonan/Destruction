@@ -120,7 +120,7 @@ void XcytheLookAndFeel_v1::drawPopupMenuItem(juce::Graphics& g, const juce::Rect
 {
     auto textColour = (textColourToUse == nullptr ? findColour(juce::PopupMenu::textColourId)
                        : *textColourToUse);
-    auto r = area.reduced(1);
+    auto r = area;// .reduced(1);
     juce::Path contour{ createFrame(r.toFloat()) };
     if (isHighlighted && isActive)
     {
@@ -153,10 +153,10 @@ void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width,
 {
     auto background{ juce::Colours::black.contrasting(0.15f) };
     g.fillAll(background);   
-#if ! JUCE_MAC
-    g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
-    g.drawRect(0, 0, width, height);
-#endif
+    //#if ! JUCE_MAC
+        //g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
+        //g.drawRect(0, 0, width, height);
+    //#endif
 }
 
 juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds)
@@ -382,7 +382,7 @@ void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
 void DistortionTestAudioProcessorEditor::resized()
 {
     int spacing{ 10 };
-    int buttonHeight{ 24 };
+    int buttonHeight{ 22 };
     int componentWidth{ 100 };
     auto bounds{ getLocalBounds() };
     bounds.removeFromTop(40); // под лого и название
