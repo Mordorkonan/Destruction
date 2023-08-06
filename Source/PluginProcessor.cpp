@@ -251,16 +251,13 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 typedef juce::AudioProcessorValueTreeState APVTS;
 APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
 {
+    juce::StringArray clipTypes{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold" };
     return APVTS::ParameterLayout
     {
-        std::make_unique<juce::AudioParameterFloat>(
-            "Input Gain", "Input Gain", -12.0f, 12.0f, 0.0f),
-        std::make_unique<juce::AudioParameterFloat>(
-            "Clip Gain", "Clip Gain", 1.0f, 10.0f, 1.0f),
-        std::make_unique<juce::AudioParameterFloat>(
-            "Output Gain", "Output Gain", -12.0f, 12.0f, 0.0f),
-        std::make_unique<juce::AudioParameterChoice>(
-            "Clipper Type", "Clipper Type", juce::StringArray{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold"}, "Hard Clip"),
+        std::make_unique<juce::AudioParameterFloat>("Input Gain", "Input Gain", -12.0f, 12.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("Clip", "Clip", 1.0f, 10.0f, 1.0f),
+        std::make_unique<juce::AudioParameterFloat>("Output Gain", "Output Gain", -12.0f, 12.0f, 0.0f),
+        std::make_unique<juce::AudioParameterChoice>("Clipper Type", "Clipper Type", clipTypes, "Hard Clip"),
         std::make_unique<juce::AudioParameterBool>("Bypass", "Bypass", false),
         std::make_unique<juce::AudioParameterBool>("Link", "Link", true)
     };

@@ -352,14 +352,12 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     };
     linkButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(linkButton);
-
     //==================================================
     // bypasskButton settings
     bypassButton.setToggleState(false, juce::NotificationType::sendNotification);
     bypassButton.onStateChange = [this]() { audioProcessor.gainController.setBypassState(bypassButton.getToggleState()); };
     bypassButton.setLookAndFeel(&newLNF);
     addAndMakeVisible(bypassButton);
-
     //==================================================
     // graph settings
     graph.startTimerHz(60);
@@ -367,6 +365,14 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     graph.label.setFont(font);
     graph.addAndMakeVisible(graph.label);
     addAndMakeVisible(graph);
+    //==================================================
+    // attachment settings
+    inputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Input Gain", inputGainSlider);
+    outputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Output Gain", outputGainSlider);
+    clipAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Clip", clipSlider);
+    bypassAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Bypass", bypassButton);
+    linkAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Link", linkButton);
+    clipperBoxAttach = std::make_unique<APVTS::ComboBoxAttachment>(audioProcessor.apvts, "Clipper Type", clipperBox);
 }
 
 DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
