@@ -91,5 +91,13 @@ private:
     DistortionTestAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;
 
+    typedef juce::AudioProcessorValueTreeState APVTS;
+    std::unique_ptr<APVTS::SliderAttachment> inputGainAttach;     
+    std::unique_ptr<APVTS::SliderAttachment> outputGainAttach;
+    std::unique_ptr<APVTS::SliderAttachment> clipAttach;
+    std::unique_ptr<APVTS::ButtonAttachment> bypassAttach;
+    std::unique_ptr<APVTS::ButtonAttachment> linkAttach;
+    std::unique_ptr<APVTS::ComboBoxAttachment> clipperBoxAttach;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessorEditor)
 };

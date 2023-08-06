@@ -277,6 +277,9 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
+    typedef juce::AudioProcessorValueTreeState APVTS;
+    APVTS::ParameterLayout createParameterLayout();
+    APVTS apvts;
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     GainController gainController;
