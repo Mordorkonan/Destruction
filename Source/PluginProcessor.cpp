@@ -219,15 +219,37 @@ juce::AudioProcessorEditor* DistortionTestAudioProcessor::createEditor()
 //==============================================================================
 void DistortionTestAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    // Метод 1 - Запись в стрим
+    /*
+    juce::MemoryOutputStream mos{ destData, false };
+    if (apvts.state.isValid()) { apvts.state.writeToStream(mos); }
+    */
+
+    // Метод 2 - Запись xml в бинарник
+    if (apvts.state.isValid())
+    {
+        const auto xml{ apvts.copyState().createXml() };
+        copyXmlToBinary(*xml, destData);
+    }
 }
 
 void DistortionTestAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    // Метод 1 - Чтение из стрима или напрямую из данных
+    /*
+    juce::ValueTree tempTree{ juce::ValueTree::readFromData(data, static_cast<size_t>(sizeInBytes)) };
+    if (tempTree.isValid() && tempTree == apvts.state) { apvts.replaceState(tempTree); }
+    else { jassertfalse; }
+    */
+
+    // Метод 2 - Чтение из бинарника в xml
+    const auto xml{ getXmlFromBinary(data, sizeInBytes) };
+    if (xml != nullptr) // проверка обязательна, иначе вылезает jassert
+    {
+        juce::ValueTree tempTree{ juce::ValueTree::fromXml(*xml) };
+        if (tempTree.isValid()) { apvts.replaceState(tempTree); }
+    }
+    else { return; }
 }
 //==============================================================================
 void GainController::setInputGainLevelInDb(const double& value) { inputGainInDb = value; }
@@ -257,7 +279,7 @@ APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
         std::make_unique<juce::AudioParameterFloat>("Input Gain", "Input Gain", -12.0f, 12.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("Clip", "Clip", 1.0f, 10.0f, 1.0f),
         std::make_unique<juce::AudioParameterFloat>("Output Gain", "Output Gain", -12.0f, 12.0f, 0.0f),
-        std::make_unique<juce::AudioParameterChoice>("Clipper Type", "Clipper Type", clipTypes, "Hard Clip"),
+        std::make_unique<juce::AudioParameterChoice>("Clipper Type", "Clipper Type", clipTypes, hard),
         std::make_unique<juce::AudioParameterBool>("Bypass", "Bypass", false),
         std::make_unique<juce::AudioParameterBool>("Link", "Link", true)
     };

@@ -367,9 +367,9 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     addAndMakeVisible(graph);
     //==================================================
     // attachment settings
-    inputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Input Gain", inputGainSlider);
-    outputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Output Gain", outputGainSlider);
-    clipAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Clip", clipSlider);
+    inputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Input Gain", inputGainSlider.slider);
+    outputGainAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Output Gain", outputGainSlider.slider);
+    clipAttach = std::make_unique<APVTS::SliderAttachment>(audioProcessor.apvts, "Clip", clipSlider.slider);
     bypassAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Bypass", bypassButton);
     linkAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Link", linkButton);
     clipperBoxAttach = std::make_unique<APVTS::ComboBoxAttachment>(audioProcessor.apvts, "Clipper Type", clipperBox);
