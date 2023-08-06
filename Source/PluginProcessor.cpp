@@ -33,9 +33,12 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
         #endif
             .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     #endif
-        )
+        ),
+    apvts(*this, nullptr, ProjectInfo::projectName, createParameterLayout())
 #endif
-{    
+{
+    apvts.state.setProperty(juce::Identifier("presetName"), "-init-", nullptr);
+    apvts.state.setProperty(juce::Identifier("version"), ProjectInfo::versionString, nullptr);
 }
 
 DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
@@ -243,4 +246,22 @@ bool GainController::getBypassState() const { return bypassed; }
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new DistortionTestAudioProcessor();
+}
+
+typedef juce::AudioProcessorValueTreeState APVTS;
+APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
+{
+    return APVTS::ParameterLayout
+    {
+        std::make_unique<juce::AudioParameterFloat>(
+            "Input Gain", "Input Gain", -12.0f, 12.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>(
+            "Clip Gain", "Clip Gain", 1.0f, 10.0f, 1.0f),
+        std::make_unique<juce::AudioParameterFloat>(
+            "Output Gain", "Output Gain", -12.0f, 12.0f, 0.0f),
+        std::make_unique<juce::AudioParameterChoice>(
+            "Clipper Type", "Clipper Type", juce::StringArray{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold"}, "Hard Clip"),
+        std::make_unique<juce::AudioParameterBool>("Bypass", "Bypass", false),
+        std::make_unique<juce::AudioParameterBool>("Link", "Link", true)
+    };
 }
