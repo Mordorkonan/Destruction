@@ -270,12 +270,99 @@ void TransientFunctionGraph::resized()
     drawBackground();
 }
 //==============================================================================
+PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf), manager(pm)
+{
+    previousButton.setButtonText("<");
+    previousButton.setLookAndFeel(&lnf);
+    addAndMakeVisible(previousButton);
+    previousButton.onClick = [&]()
+    {
+        const int index{ manager.previousPreset() };
+        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+    };
+
+    nextButton.setButtonText(">");
+    nextButton.setLookAndFeel(&lnf);
+    addAndMakeVisible(nextButton);
+    previousButton.onClick = [&]()
+    {
+        const int index{ manager.nextPreset() };
+        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+    };
+
+    presetMenu.setTextWhenNothingSelected("-init-");
+    presetMenu.setTextWhenNoChoicesAvailable("No saved presets");
+    presetMenu.setLookAndFeel(&lnf);
+    addAndMakeVisible(presetMenu);
+    presetMenu.onChange = [&]()
+    {
+        if (presetMenu.getSelectedId() == PresetMenuIDs::New)
+        {
+            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+            manager.newPreset();
+        }
+        else if (presetMenu.getSelectedId() == PresetMenuIDs::Load)
+        {
+            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+            fileChooser = std::make_unique<juce::FileChooser>(
+                "Please choose the preset to load",
+                PresetManager::defaultDir,
+                "*." + PresetManager::extention);
+            fileChooser->launchAsync(juce::FileBrowserComponent::openMode, [this](const juce::FileChooser& chooser)
+                {
+                    const auto fileToLoad{ chooser.getResult() };
+                    manager.loadPreset(fileToLoad.getFileNameWithoutExtension());
+                });
+            presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
+                manager.currentPreset.toString()) + manager.presetListIdOffset);
+        }
+        else if (presetMenu.getSelectedId() == PresetMenuIDs::Save)
+        {
+            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+            fileChooser = std::make_unique<juce::FileChooser>(
+                "Please enter the name of the preset to save",
+                PresetManager::defaultDir,
+                "*." + PresetManager::extention);
+            fileChooser->launchAsync(juce::FileBrowserComponent::saveMode, [this](const juce::FileChooser& chooser)
+                {
+                    const auto fileToLoad{ chooser.getResult() };
+                    manager.savePreset(fileToLoad.getFileNameWithoutExtension());
+                    updatePresetMenu();
+                });
+            presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
+                manager.currentPreset.toString()) + manager.presetListIdOffset);
+        }
+        else if (presetMenu.getSelectedId() == PresetMenuIDs::Delete)
+        {
+            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+            manager.deletePreset(manager.currentPreset.toString());
+            updatePresetMenu();
+        }
+        else // пресеты
+        {
+            manager.loadPreset(presetMenu.getItemText(presetMenu.getSelectedItemIndex()));
+        }
+    };
+}
+
+void PresetPanel::updatePresetMenu()
+{
+    presetMenu.clear(juce::NotificationType::dontSendNotification);
+    presetMenu.addItem("New preset", PresetMenuIDs::New);
+    presetMenu.addItem("Save preset...", PresetMenuIDs::Load);
+    presetMenu.addItem("Load preset...", PresetMenuIDs::Save);
+    presetMenu.addItem("Delete preset", PresetMenuIDs::Delete);
+    presetMenu.addSeparator();
+    presetMenu.addItemList(manager.presetList, PresetMenuIDs::PresetList);
+}
+//==============================================================================
 DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p), presetPanel(newLNF)
 {
     setSize (660, 210);
     juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
     font.setHeight(18.0f);
+    addAndMakeVisible(presetPanel);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
@@ -391,7 +478,7 @@ void DistortionTestAudioProcessorEditor::resized()
     int buttonHeight{ 22 };
     int componentWidth{ 100 };
     auto bounds{ getLocalBounds() };
-    bounds.removeFromTop(40); // под лого и название
+    auto header{ bounds.removeFromTop(40) }; // под лого и название
     bounds.reduce(spacing, spacing);
     outputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
     bounds.removeFromRight(spacing);
@@ -406,4 +493,5 @@ void DistortionTestAudioProcessorEditor::resized()
     bypassButton.setBounds(bounds.removeFromLeft(componentWidth));
     bounds.removeFromLeft(spacing);
     linkButton.setBounds(bounds.removeFromLeft(componentWidth));
+    presetPanel.setBounds(header.removeFromRight(getWidth() * 0.5f).reduced(9));
 }

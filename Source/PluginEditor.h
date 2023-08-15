@@ -14,6 +14,8 @@
 #define FONT_HEIGHT 18.0f
 #define LABEL_HEIGHT 25
 //==============================================================================
+enum PresetMenuIDs { New = 1, Load, Save, Delete, PresetList };
+//==============================================================================
 class XcytheLookAndFeel_v1 : public juce::LookAndFeel_V4
 {
 public:
@@ -69,6 +71,20 @@ private:
     float cornerSize{ 4.0f };
 };
 //==============================================================================
+class PresetPanel : public juce::Component
+{
+public:
+    PresetPanel(juce::LookAndFeel& _lnf, PresetManager& manager);
+    void updatePresetMenu();
+private:
+    juce::LookAndFeel& lnf;
+    juce::TextButton previousButton{ "Previous" };
+    juce::TextButton nextButton{ "Next" };
+    juce::ComboBox presetMenu;
+    PresetManager& manager;
+    std::unique_ptr<juce::FileChooser> fileChooser;
+};
+//==============================================================================
 class DistortionTestAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
@@ -90,6 +106,7 @@ private:
 
     DistortionTestAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;
+    PresetPanel presetPanel;
 
     typedef juce::AudioProcessorValueTreeState APVTS;
     std::unique_ptr<APVTS::SliderAttachment> inputGainAttach;     
