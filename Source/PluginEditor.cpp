@@ -118,10 +118,19 @@ void XcytheLookAndFeel_v1::drawPopupMenuItem(juce::Graphics& g, const juce::Rect
                                              const juce::String& shortcutKeyText,
                                              const juce::Drawable* icon, const juce::Colour* const textColourToUse)
 {
+    if (isSeparator)
+    {
+        auto r = area.reduced(12, 0); // 12 для выравнивания под фаску рамки
+        r.removeFromTop(juce::roundToInt((static_cast<float>(r.getHeight()) * 0.5f) - 0.5f));
+
+        g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.3f));
+        g.fillRect(r.removeFromTop(1));
+        return;
+    }
     auto textColour = (textColourToUse == nullptr ? findColour(juce::PopupMenu::textColourId)
                        : *textColourToUse);
     auto r = area;// .reduced(1);
-    juce::Path contour{ createFrame(r.toFloat()) };
+    juce::Path contour{ createFrame(r.toFloat().reduced(1, 0)) };
     if (isHighlighted && isActive)
     {
         g.setColour(juce::Colours::grey);
@@ -153,10 +162,10 @@ void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width,
 {
     auto background{ juce::Colours::black.contrasting(0.15f) };
     g.fillAll(background);   
-    //#if ! JUCE_MAC
-        //g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
-        //g.drawRect(0, 0, width, height);
-    //#endif
+    #if ! JUCE_MAC
+        g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
+        g.drawRect(0, 0, width, height);
+    #endif
 }
 
 juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds)
