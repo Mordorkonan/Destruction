@@ -302,6 +302,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
+    PresetManager& getPresetManager();
     APVTS::ParameterLayout createParameterLayout();
     APVTS apvts;
     juce::ValueTree defaultTree;
@@ -310,6 +311,7 @@ public:
     GainController gainController;
     ClipHolder clipHolder;
 private:
+    std::unique_ptr<PresetManager> manager;
 #if OSC
     juce::dsp::Oscillator<float> osc;
 #endif // OSC

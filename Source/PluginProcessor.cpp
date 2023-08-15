@@ -50,7 +50,7 @@ PresetManager::~PresetManager() { apvts.state.removeListener(this); }
 
 void PresetManager::newPreset()
 {
-    apvts.replaceState(defaultTree);
+    apvts.replaceState(defaultTree.createCopy());
     currentPreset.setValue("-init-");
 }
 
@@ -102,7 +102,7 @@ void PresetManager::deletePreset(const juce::String& presetName)
     const juce::File presetToDelete{ defaultDir.getChildFile(presetName + "." + extention) };
     if (!presetToDelete.exists())
     {
-        DBG("Failed to load preset file");
+        DBG("Preset is not saved to be deleted");
         jassertfalse;
         return;
     }
@@ -114,6 +114,7 @@ void PresetManager::deletePreset(const juce::String& presetName)
     }
     updatePresetList();
     currentPreset.setValue("-init-");
+    apvts.replaceState(defaultTree.createCopy());
 }
 
 void PresetManager::updatePresetList()
@@ -125,16 +126,18 @@ void PresetManager::updatePresetList()
 
 int PresetManager::nextPreset()
 {
+    if (presetList.isEmpty()) { return -1; }
     const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
-    int nextIndex{ currentIndex == presetList.size() - 1 ? 0 : currentIndex + 1 };
+    int nextIndex{ currentIndex >= presetList.size() - 1 ? 0 : currentIndex + 1 };
     loadPreset(presetList.getReference(nextIndex));
     return nextIndex + presetListIdOffset; // смещение для обхода строк New, Load, Save, Delete в комбобоксе
 }
 
 int PresetManager::previousPreset()
 {
+    if (presetList.isEmpty()) { return -1; }
     const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
-    int prevIndex{ currentIndex == 0 ? presetList.size() - 1 : currentIndex - 1 };
+    int prevIndex{ currentIndex <= 0 ? presetList.size() - 1 : currentIndex - 1 };
     loadPreset(presetList.getReference(prevIndex));
     return prevIndex + presetListIdOffset;
 }
@@ -160,6 +163,8 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
     apvts.state.setProperty(juce::Identifier("presetName"), "-init-", nullptr);
     apvts.state.setProperty(juce::Identifier("version"), ProjectInfo::versionString, nullptr);
     defaultTree = apvts.copyState(); // сохранение дефолтного дерева для функции создания нового пресета
+    manager = std::make_unique<PresetManager>(apvts, defaultTree);
+    manager->updatePresetList();
 }
 
 DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
@@ -391,7 +396,6 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new DistortionTestAudioProcessor();
 }
 
-typedef juce::AudioProcessorValueTreeState APVTS;
 APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
 {
     juce::StringArray clipTypes{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold" };
@@ -405,3 +409,5 @@ APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
         std::make_unique<juce::AudioParameterBool>("Link", "Link", true)
     };
 }
+
+PresetManager& DistortionTestAudioProcessor::getPresetManager() { return *manager; }
