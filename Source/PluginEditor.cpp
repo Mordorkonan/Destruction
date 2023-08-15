@@ -302,8 +302,9 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
     updatePresetMenu();
     presetMenu.setTextWhenNothingSelected("-init-");
     presetMenu.setTextWhenNoChoicesAvailable("No saved presets");
-    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-        manager.currentPreset.toString()) + manager.presetListIdOffset);
+    const auto presetMenuIndex{ manager.presetList.indexOf(manager.currentPreset.toString()) };
+    if (presetMenuIndex == -1) { presetMenu.setSelectedItemIndex(presetMenuIndex); }
+    else { presetMenu.setSelectedItemIndex(presetMenuIndex + manager.presetListIdOffset); }    
     presetMenu.setLookAndFeel(&lnf);
     addAndMakeVisible(presetMenu);
     presetMenu.onChange = [&]()
