@@ -436,7 +436,7 @@ void PresetPanel::resized()
     nextButton.setBounds(bounds.removeFromLeft(componentWidth));
 }
 //==============================================================================
-DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor& p)
+DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p), presetPanel(newLNF, audioProcessor.getPresetManager())
 {
     setSize (660, 210);
@@ -542,12 +542,12 @@ DistortionTestAudioProcessorEditor::DistortionTestAudioProcessorEditor (Distorti
     clipperBoxAttach = std::make_unique<APVTS::ComboBoxAttachment>(audioProcessor.apvts, "Clipper Type", clipperBox);
 }
 
-DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
+DestructionAudioProcessorEditor::~DestructionAudioProcessorEditor()
 {
 }
 
 //==============================================================================
-void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
+void DestructionAudioProcessorEditor::paint (juce::Graphics& g)
 {
     /* Для отрисовки фона заголовка и тела окна плагина использован
     класс std::map<key, T>. Это карта, содержащая значения и их ключи.
@@ -568,7 +568,7 @@ void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
     drawBackground(g, gradient, bounds, colors);
 }
 
-void DistortionTestAudioProcessorEditor::resized()
+void DestructionAudioProcessorEditor::resized()
 {
     int spacing{ 10 };
     int buttonHeight{ 22 };
@@ -592,7 +592,7 @@ void DistortionTestAudioProcessorEditor::resized()
     presetPanel.setBounds(headerBounds.removeFromRight(getWidth() * 0.5f).reduced(9));
 }
 
-void DistortionTestAudioProcessorEditor::drawBackground(juce::Graphics& g,
+void DestructionAudioProcessorEditor::drawBackground(juce::Graphics& g,
                                                         juce::ColourGradient& gradient,
                                                         const juce::Rectangle<float>& bounds,
                                                         std::map<double, juce::Colour>& colors)

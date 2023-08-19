@@ -89,11 +89,11 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser;
 };
 //==============================================================================
-class DistortionTestAudioProcessorEditor  : public juce::AudioProcessorEditor
+class DestructionAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
-    DistortionTestAudioProcessorEditor (DistortionTestAudioProcessor&);
-    ~DistortionTestAudioProcessorEditor() override;
+    DestructionAudioProcessorEditor (DestructionAudioProcessor&);
+    ~DestructionAudioProcessorEditor() override;
 
     //==============================================================================
     void paint (juce::Graphics&) override;
@@ -112,7 +112,7 @@ private:
     juce::ToggleButton linkButton{ "Link" };
     juce::ToggleButton bypassButton{ "Bypass" };
 
-    DistortionTestAudioProcessor& audioProcessor;
+    DestructionAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;
     PresetPanel presetPanel;
 
@@ -123,5 +123,5 @@ private:
     std::unique_ptr<APVTS::ButtonAttachment> linkAttach;
     std::unique_ptr<APVTS::ComboBoxAttachment> clipperBoxAttach;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DestructionAudioProcessorEditor)
 };

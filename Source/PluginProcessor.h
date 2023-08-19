@@ -258,15 +258,15 @@ public:
     const int presetListIdOffset{ 4 };
 };
 //==============================================================================
-class DistortionTestAudioProcessor  : public juce::AudioProcessor
+class DestructionAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
 {
 public:
     //==============================================================================
-    DistortionTestAudioProcessor();
-    ~DistortionTestAudioProcessor() override;
+    DestructionAudioProcessor();
+    ~DestructionAudioProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -319,5 +319,5 @@ private:
     juce::dsp::Gain<float> outputGain;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DistortionTestAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DestructionAudioProcessor)
 };

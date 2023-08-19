@@ -17,7 +17,7 @@ ClipHolder::ClipHolder()
     clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper.get()));
     clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper.get()));
     
-    currentClipper = hard; // убрать, когда будет дерево параметров
+    currentClipper = hard; // ГіГЎГ°Г ГІГј, ГЄГ®ГЈГ¤Г  ГЎГіГ¤ГҐГІ Г¤ГҐГ°ГҐГўГ® ГЇГ Г°Г Г¬ГҐГІГ°Г®Гў
 }
 
 void ClipHolder::setClipper(int newClipper) { currentClipper = newClipper; }
@@ -120,7 +120,7 @@ void PresetManager::deletePreset(const juce::String& presetName)
 
 void PresetManager::updatePresetList()
 {
-    presetList.clear(); // нужно чистить перед каждым добавлением элементов
+    presetList.clear(); // Г­ГіГ¦Г­Г® Г·ГЁГ±ГІГЁГІГј ГЇГҐГ°ГҐГ¤ ГЄГ Г¦Г¤Г»Г¬ Г¤Г®ГЎГ ГўГ«ГҐГ­ГЁГҐГ¬ ГЅГ«ГҐГ¬ГҐГ­ГІГ®Гў
     const auto fileList{ defaultDir.findChildFiles(juce::File::TypesOfFileToFind::findFiles, false, "*." + extention)};
     for (const auto& file : fileList) { presetList.add(file.getFileNameWithoutExtension()); }
 }
@@ -131,7 +131,7 @@ int PresetManager::nextPreset()
     const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
     int nextIndex{ currentIndex >= presetList.size() - 1 ? 0 : currentIndex + 1 };
     loadPreset(presetList.getReference(nextIndex));
-    return nextIndex + presetListIdOffset; // смещение для обхода строк New, Load, Save, Delete в комбобоксе
+    return nextIndex + presetListIdOffset; // Г±Г¬ГҐГ№ГҐГ­ГЁГҐ Г¤Г«Гї Г®ГЎГµГ®Г¤Г  Г±ГІГ°Г®ГЄ New, Load, Save, Delete Гў ГЄГ®Г¬ГЎГ®ГЎГ®ГЄГ±ГҐ
 }
 
 int PresetManager::previousPreset()
@@ -148,7 +148,7 @@ void PresetManager::valueTreeRedirected(juce::ValueTree& changedTree)
     currentPreset.referTo(changedTree.getPropertyAsValue(juce::Identifier("presetName"), nullptr));
 }
 //==============================================================================
-DistortionTestAudioProcessor::DistortionTestAudioProcessor()
+DestructionAudioProcessor::DestructionAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
         : AudioProcessor(BusesProperties()
     #if ! JucePlugin_IsMidiEffect
@@ -163,22 +163,22 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 {
     apvts.state.setProperty(juce::Identifier("presetName"), "-init-", nullptr);
     apvts.state.setProperty(juce::Identifier("version"), ProjectInfo::versionString, nullptr);
-    defaultTree = apvts.copyState(); // сохранение дефолтного дерева для функции создания нового пресета
+    defaultTree = apvts.copyState(); // Г±Г®ГµГ°Г Г­ГҐГ­ГЁГҐ Г¤ГҐГґГ®Г«ГІГ­Г®ГЈГ® Г¤ГҐГ°ГҐГўГ  Г¤Г«Гї ГґГіГ­ГЄГ¶ГЁГЁ Г±Г®Г§Г¤Г Г­ГЁГї Г­Г®ГўГ®ГЈГ® ГЇГ°ГҐГ±ГҐГІГ 
     manager = std::make_unique<PresetManager>(apvts, defaultTree);
     manager->updatePresetList();
 }
 
-DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
+DestructionAudioProcessor::~DestructionAudioProcessor()
 {
 }
 
 //==============================================================================
-const juce::String DistortionTestAudioProcessor::getName() const
+const juce::String DestructionAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
 
-bool DistortionTestAudioProcessor::acceptsMidi() const
+bool DestructionAudioProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
     return true;
@@ -187,7 +187,7 @@ bool DistortionTestAudioProcessor::acceptsMidi() const
    #endif
 }
 
-bool DistortionTestAudioProcessor::producesMidi() const
+bool DestructionAudioProcessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
     return true;
@@ -196,7 +196,7 @@ bool DistortionTestAudioProcessor::producesMidi() const
    #endif
 }
 
-bool DistortionTestAudioProcessor::isMidiEffect() const
+bool DestructionAudioProcessor::isMidiEffect() const
 {
    #if JucePlugin_IsMidiEffect
     return true;
@@ -205,37 +205,37 @@ bool DistortionTestAudioProcessor::isMidiEffect() const
    #endif
 }
 
-double DistortionTestAudioProcessor::getTailLengthSeconds() const
+double DestructionAudioProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int DistortionTestAudioProcessor::getNumPrograms()
+int DestructionAudioProcessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int DistortionTestAudioProcessor::getCurrentProgram()
+int DestructionAudioProcessor::getCurrentProgram()
 {
     return 0;
 }
 
-void DistortionTestAudioProcessor::setCurrentProgram (int index)
+void DestructionAudioProcessor::setCurrentProgram (int index)
 {
 }
 
-const juce::String DistortionTestAudioProcessor::getProgramName (int index)
+const juce::String DestructionAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void DistortionTestAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void DestructionAudioProcessor::changeProgramName (int index, const juce::String& newName)
 {
 }
 
 //==============================================================================
-void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void DestructionAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     fifo.prepare(samplesPerBlock, getNumInputChannels());
         juce::dsp::ProcessSpec spec;
@@ -253,14 +253,14 @@ void DistortionTestAudioProcessor::prepareToPlay (double sampleRate, int samples
         outputGain.setGainDecibels(static_cast<float>(gainController.getOutputGainLevelInDb()));
 }
 
-void DistortionTestAudioProcessor::releaseResources()
+void DestructionAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool DistortionTestAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool DestructionAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
   #if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
@@ -285,7 +285,7 @@ bool DistortionTestAudioProcessor::isBusesLayoutSupported (const BusesLayout& la
 }
 #endif
 
-void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void DestructionAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -301,7 +301,7 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             buffer.setSample(1, i, sample2);
         }
     #endif
-    // указываем условный порог магнитуды в 0,05 чтобы снизить нагрузку на процессор на холостом ходе
+    // ГіГЄГ Г§Г»ГўГ ГҐГ¬ ГіГ±Г«Г®ГўГ­Г»Г© ГЇГ®Г°Г®ГЈ Г¬Г ГЈГ­ГЁГІГіГ¤Г» Гў 0,05 Г·ГІГ®ГЎГ» Г±Г­ГЁГ§ГЁГІГј Г­Г ГЈГ°ГіГ§ГЄГі Г­Г  ГЇГ°Г®Г¶ГҐГ±Г±Г®Г° Г­Г  ГµГ®Г«Г®Г±ГІГ®Г¬ ГµГ®Г¤ГҐ
     if (!gainController.getBypassState() && buffer.getMagnitude(0, buffer.getNumSamples()) >= 0.00001)
     {
         // input gain
@@ -333,26 +333,26 @@ void DistortionTestAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 }
 
 //==============================================================================
-bool DistortionTestAudioProcessor::hasEditor() const
+bool DestructionAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* DistortionTestAudioProcessor::createEditor()
+juce::AudioProcessorEditor* DestructionAudioProcessor::createEditor()
 {
-    return new DistortionTestAudioProcessorEditor (*this);
+    return new DestructionAudioProcessorEditor (*this);
 }
 
 //==============================================================================
-void DistortionTestAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void DestructionAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // Метод 1 - Запись в стрим
+    // ГЊГҐГІГ®Г¤ 1 - Г‡Г ГЇГЁГ±Гј Гў Г±ГІГ°ГЁГ¬
     /*
     juce::MemoryOutputStream mos{ destData, false };
     if (apvts.state.isValid()) { apvts.state.writeToStream(mos); }
     */
 
-    // Метод 2 - Запись xml в бинарник
+    // ГЊГҐГІГ®Г¤ 2 - Г‡Г ГЇГЁГ±Гј xml Гў ГЎГЁГ­Г Г°Г­ГЁГЄ
     if (apvts.state.isValid())
     {
         const auto xml{ apvts.copyState().createXml() };
@@ -360,18 +360,18 @@ void DistortionTestAudioProcessor::getStateInformation (juce::MemoryBlock& destD
     }
 }
 
-void DistortionTestAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void DestructionAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // Метод 1 - Чтение из стрима или напрямую из данных
+    // ГЊГҐГІГ®Г¤ 1 - Г—ГІГҐГ­ГЁГҐ ГЁГ§ Г±ГІГ°ГЁГ¬Г  ГЁГ«ГЁ Г­Г ГЇГ°ГїГ¬ГіГѕ ГЁГ§ Г¤Г Г­Г­Г»Гµ
     /*
     juce::ValueTree tempTree{ juce::ValueTree::readFromData(data, static_cast<size_t>(sizeInBytes)) };
     if (tempTree.isValid() && tempTree == apvts.state) { apvts.replaceState(tempTree); }
     else { jassertfalse; }
     */
 
-    // Метод 2 - Чтение из бинарника в xml
+    // ГЊГҐГІГ®Г¤ 2 - Г—ГІГҐГ­ГЁГҐ ГЁГ§ ГЎГЁГ­Г Г°Г­ГЁГЄГ  Гў xml
     const auto xml{ getXmlFromBinary(data, sizeInBytes) };
-    if (xml != nullptr) // проверка обязательна, иначе вылезает jassert
+    if (xml != nullptr) // ГЇГ°Г®ГўГҐГ°ГЄГ  Г®ГЎГїГ§Г ГІГҐГ«ГјГ­Г , ГЁГ­Г Г·ГҐ ГўГ»Г«ГҐГ§Г ГҐГІ jassert
     {
         juce::ValueTree tempTree{ juce::ValueTree::fromXml(*xml) };
         if (tempTree.isValid()) { apvts.replaceState(tempTree); }
@@ -394,10 +394,10 @@ bool GainController::getBypassState() const { return bypassed; }
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new DistortionTestAudioProcessor();
+    return new DestructionAudioProcessor();
 }
 
-APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
+APVTS::ParameterLayout DestructionAudioProcessor::createParameterLayout()
 {
     juce::StringArray clipTypes{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold" };
     return APVTS::ParameterLayout
@@ -411,4 +411,4 @@ APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
     };
 }
 
-PresetManager& DistortionTestAudioProcessor::getPresetManager() { return *manager; }
+PresetManager& DestructionAudioProcessor::getPresetManager() { return *manager; }

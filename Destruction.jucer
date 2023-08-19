@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="DH74Fn" name="DistortionTest" projectType="audioplug" useAppConfig="0"
+<JUCERPROJECT id="DH74Fn" name="Destruction" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAAX,buildAU,buildStandalone,buildVST3"
-              companyName="MordorkonanTestCompany">
-  <MAINGROUP id="y6MT15" name="DistortionTest">
+              companyName="Xcythe">
+  <MAINGROUP id="y6MT15" name="Destruction">
     <GROUP id="{71C368AF-64EB-9DA7-7C8D-7E3B8A87F80F}" name="Source">
+      <GROUP id="{CD302618-499E-1185-8733-1F80419C29A9}" name="Assets">
+        <FILE id="FJBuic" name="MagistralTT.ttf" compile="0" resource="1" file="Source/Assets/MagistralTT.ttf"/>
+      </GROUP>
       <FILE id="Va5hZy" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Hb6Td4" name="PluginProcessor.h" compile="0" resource="0"
@@ -18,9 +21,9 @@
   <EXPORTFORMATS>
     <VS2019 targetFolder="Builds/VisualStudio2019">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="DistortionTest" enablePluginBinaryCopyStep="1"
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Destruction" enablePluginBinaryCopyStep="1"
                        aaxBinaryLocation="%CommonProgramW6432%\AAX" vst3BinaryLocation="%CommonProgramW6432%\VST3_2"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="DistortionTest"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Destruction"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../Program Files/JUCE/modules"/>
