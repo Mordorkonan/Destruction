@@ -15,6 +15,7 @@
 #define LABEL_HEIGHT 25
 //==============================================================================
 enum PresetMenuIDs { New = 1, Save, Load, Delete, PresetList };
+enum FrameOrientation { None, Left, Right };
 //==============================================================================
 class XcytheLookAndFeel_v1 : public juce::LookAndFeel_V4
 {
@@ -25,6 +26,8 @@ public:
                           float rotaryEndAngle, juce::Slider& slider) override;
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void drawButtonBackground (juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void drawComboBox(juce::Graphics& g, int width, int height, bool,
                       int, int, int, int, juce::ComboBox& box) override;
     void positionComboBoxText(juce::ComboBox& box, juce::Label& label) override;
@@ -35,7 +38,7 @@ public:
                            const juce::String& shortcutKeyText,
                            const juce::Drawable* icon, const juce::Colour* const textColourToUse) override;
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
-    juce::Path createFrame(juce::Rectangle<float>& bounds);
+    juce::Path createFrame(juce::Rectangle<float>& bounds, FrameOrientation orientation);
 private:
     juce::Font font;
 };

@@ -75,7 +75,7 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
 {
     float lineThickness{ 1.0f };
     auto bounds{ togglebutton.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
-    juce::Path contour{ createFrame(bounds) };
+    juce::Path contour{ createFrame(bounds, FrameOrientation::None) };
     // определяем цвет в зависимости от состояния кнопки
     auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
                         togglebutton.hasKeyboardFocus(true) ? 1.3f : 1.0f)
@@ -92,12 +92,37 @@ void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButto
     g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
 }
 
+void XcytheLookAndFeel_v1::drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                                                bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    float lineThickness{ 1.0f };
+    auto bounds{ button.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
+    auto orientation = FrameOrientation::None;
+    if (button.getButtonText() == "<") { orientation = FrameOrientation::Left; }
+    else if (button.getButtonText() == ">") { orientation = FrameOrientation::Right; }
+    juce::Path contour{ createFrame(bounds, orientation) };
+    // определяем цвет в зависимости от состояния кнопки
+    auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
+                        button.hasKeyboardFocus(true) ? 1.3f : 1.0f)
+                        .withMultipliedAlpha(button.getToggleState() ? 1.0f : 0.5f) };
+    if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
+    {
+        baseColor = baseColor.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
+    }
+    g.setColour(baseColor);
+    g.fillPath(contour);
+    g.setColour(juce::Colours::white);
+    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
+    g.setFont(font);
+    g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
+}
+
 void XcytheLookAndFeel_v1::drawComboBox(juce::Graphics& g, int width, int height, bool,
                   int, int, int, int, juce::ComboBox& box)
 {
     float lineThickness{ 1.0f };
     auto bounds{ box.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
-    juce::Path contour{ createFrame(bounds) };
+    juce::Path contour{ createFrame(bounds, FrameOrientation::None) };
     g.setColour(juce::Colours::darkgrey.withAlpha(0.5f));
     g.fillPath(contour);
     g.setColour(juce::Colours::white);
@@ -129,8 +154,8 @@ void XcytheLookAndFeel_v1::drawPopupMenuItem(juce::Graphics& g, const juce::Rect
     }
     auto textColour = (textColourToUse == nullptr ? findColour(juce::PopupMenu::textColourId)
                        : *textColourToUse);
-    auto r = area;// .reduced(1);
-    juce::Path contour{ createFrame(r.toFloat().reduced(1, 0)) };
+    auto r = area;
+    juce::Path contour{ createFrame(r.toFloat().reduced(1.5f, 0.5f), FrameOrientation::None) };
     if (isHighlighted && isActive)
     {
         g.setColour(juce::Colours::grey);
@@ -168,18 +193,50 @@ void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width,
     #endif
 }
 
-juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds)
+juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds, FrameOrientation orientation)
 {
-    // отрисовка 6-угольного контура
+    /* Метод для отрисовки 6-угольного контура кнопок и комбобоксов.
+    Примечание! передаваемые баунды учитывают половину толщины линии,
+    т.е. для толщины = 1 пикселю, баунды будут равны:
+    juce::Rectangle<float>(0.5, 0.5, getHeight() - 0.5, getWidth() - 0.5)
+    В связи с этим при выстраивании контура к параметру chamfer 
+    добавляется bounds.getY() для учёта смещения по вертикали. */
     juce::Path contour;
     auto chamfer{ bounds.getHeight() * 0.5f };
-    contour.startNewSubPath(bounds.getX(), chamfer);
-    contour.lineTo(bounds.getX() + chamfer, bounds.getY());
+    if (orientation == FrameOrientation::None)
+    {
+        contour.startNewSubPath(bounds.getX() + chamfer, bounds.getY());
+    }
+    else
+    {
+        contour.startNewSubPath(bounds.getX(), bounds.getY());
+    }
     contour.lineTo(bounds.getRight() - chamfer, bounds.getY());
     contour.lineTo(bounds.getRight(), bounds.getY() + chamfer);
-    contour.lineTo(bounds.getRight() - chamfer, bounds.getHeight());
-    contour.lineTo(bounds.getX() + chamfer, bounds.getHeight());
+    contour.lineTo(bounds.getRight() - chamfer, bounds.getBottom());
+    if (orientation == FrameOrientation::None)
+    {
+        contour.lineTo(bounds.getX() + chamfer, bounds.getBottom());
+        contour.lineTo(bounds.getX(), bounds.getY() + chamfer);
+    }
+    else
+    {
+        contour.lineTo(bounds.getX(), bounds.getBottom());
+        contour.lineTo(bounds.getX() + chamfer, bounds.getY() + chamfer);
+    }
     contour.closeSubPath();
+    /* Для отражения ориентированного контура для кнопок nextPreset,
+    prevPreset используется преобразование через juce::AffineTransform.
+    При этом необходимо учитывать, что поворот производится относительно
+    начала координат, при этом пиксель, находившийся в координатах 0;0,
+    будет находиться в -1;-1, поэтому при использовании функции
+    juce::AffineTransform::translation нужно к размерам баундов
+    добавлять 1 для компенсации разворота. */
+    if (orientation == FrameOrientation::Left)
+    {
+        contour.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi));
+        contour.applyTransform(juce::AffineTransform::translation(bounds.getWidth() + 1, bounds.getHeight() + 1));
+    }    
     return contour;
 }
 //==============================================================================
@@ -316,7 +373,6 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
         }
         else if (presetMenu.getSelectedId() == PresetMenuIDs::Save)
         {
-            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please enter the name of the preset to save",
                 PresetManager::defaultDir,
@@ -326,14 +382,13 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                     const auto fileToSave{ chooser.getResult() };
                     manager.savePreset(fileToSave.getFileNameWithoutExtension());
                     updatePresetMenu();
-                    //presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                    //    manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
+                        manager.currentPreset.toString()) + manager.presetListIdOffset);
                 });
 
         }
         else if (presetMenu.getSelectedId() == PresetMenuIDs::Load)
         {
-            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please choose the preset to load",
                 PresetManager::defaultDir,
@@ -342,8 +397,8 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                 {
                     const auto fileToLoad{ chooser.getResult() };
                     manager.loadPreset(fileToLoad.getFileNameWithoutExtension());
-                    //presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                    //    manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
+                        manager.currentPreset.toString()) + manager.presetListIdOffset);
                 });
         }
         else if (presetMenu.getSelectedId() == PresetMenuIDs::Delete)
@@ -374,12 +429,10 @@ void PresetPanel::resized()
 {
     auto bounds{ getLocalBounds() };
     const auto prop{ bounds };
-    const int componentWidth{ 50 };
+    const int componentWidth{ 51 };
     const int spacing{ 6 };
     previousButton.setBounds(bounds.removeFromLeft(componentWidth));
-    bounds.removeFromLeft(spacing);
     presetMenu.setBounds(bounds.removeFromLeft(componentWidth * 4));
-    bounds.removeFromLeft(spacing);
     nextButton.setBounds(bounds.removeFromLeft(componentWidth));
 }
 //==============================================================================
