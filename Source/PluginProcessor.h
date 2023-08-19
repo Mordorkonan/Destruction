@@ -13,7 +13,7 @@
 #define OSC false
 //========================================
 // Clipper correction coefficients
-#define HARDCLIP_COEF 0.25
+#define HARDCLIP_COEF 0.75
 #define SOFTCLIP_COEF 1.25
 #define FOLDBACK_COEF 0.5
 #define SINEFOLD_COEF 0.75
@@ -22,6 +22,8 @@
 #define SLOW_SENS 125
 #define NORM_SENS 250
 //========================================
+typedef juce::AudioProcessorValueTreeState APVTS;
+//==============================================================================
 enum ClipperType { hard = 1, soft, foldback, sinefold, linearfold };
 //==============================================================================
 template <typename Type, size_t size>
@@ -233,6 +235,29 @@ private:
     bool bypassed{ false };
 };
 //==============================================================================
+class PresetManager : public juce::ValueTree::Listener
+{
+public:
+    PresetManager(APVTS& _apvts, juce::ValueTree& _defaultTree);
+    ~PresetManager();
+    void newPreset();
+    void savePreset(const juce::String& presetName);
+    void loadPreset(const juce::String& presetName);
+    void deletePreset(const juce::String& presetName);
+    void updatePresetList();
+    int nextPreset();
+    int previousPreset();
+    void valueTreeRedirected(juce::ValueTree& changedTree) override;
+
+    APVTS& apvts;
+    juce::ValueTree& defaultTree;
+    static juce::File defaultDir;
+    static const juce::String extention;
+    juce::Value currentPreset;
+    juce::StringArray presetList;
+    const int presetListIdOffset{ 4 };
+};
+//==============================================================================
 class DistortionTestAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
@@ -277,14 +302,16 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    typedef juce::AudioProcessorValueTreeState APVTS;
+    PresetManager& getPresetManager();
     APVTS::ParameterLayout createParameterLayout();
     APVTS apvts;
+    juce::ValueTree defaultTree;
 
     Fifo<juce::AudioBuffer<float>, 256> fifo;
     GainController gainController;
     ClipHolder clipHolder;
 private:
+    std::unique_ptr<PresetManager> manager;
 #if OSC
     juce::dsp::Oscillator<float> osc;
 #endif // OSC

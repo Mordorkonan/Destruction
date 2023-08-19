@@ -14,6 +14,9 @@
 #define FONT_HEIGHT 18.0f
 #define LABEL_HEIGHT 25
 //==============================================================================
+enum PresetMenuIDs { New = 1, Save, Load, Delete, PresetList };
+enum FrameOrientation { None, Left, Right };
+//==============================================================================
 class XcytheLookAndFeel_v1 : public juce::LookAndFeel_V4
 {
 public:
@@ -23,6 +26,8 @@ public:
                           float rotaryEndAngle, juce::Slider& slider) override;
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void drawButtonBackground (juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void drawComboBox(juce::Graphics& g, int width, int height, bool,
                       int, int, int, int, juce::ComboBox& box) override;
     void positionComboBoxText(juce::ComboBox& box, juce::Label& label) override;
@@ -33,7 +38,7 @@ public:
                            const juce::String& shortcutKeyText,
                            const juce::Drawable* icon, const juce::Colour* const textColourToUse) override;
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
-    juce::Path createFrame(juce::Rectangle<float>& bounds);
+    juce::Path createFrame(juce::Rectangle<float>& bounds, FrameOrientation orientation);
 private:
     juce::Font font;
 };
@@ -69,6 +74,21 @@ private:
     float cornerSize{ 4.0f };
 };
 //==============================================================================
+class PresetPanel : public juce::Component
+{
+public:
+    PresetPanel(juce::LookAndFeel& _lnf, PresetManager& manager);
+    void updatePresetMenu();
+    void resized() override;
+private:
+    juce::LookAndFeel& lnf;
+    juce::TextButton previousButton{ "Previous" };
+    juce::TextButton nextButton{ "Next" };
+    juce::ComboBox presetMenu;
+    PresetManager& manager;
+    std::unique_ptr<juce::FileChooser> fileChooser;
+};
+//==============================================================================
 class DistortionTestAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
@@ -78,6 +98,10 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    void drawBackground(juce::Graphics& g,
+                        juce::ColourGradient& gradient,
+                        const juce::Rectangle<float>& bounds,
+                        std::map<double, juce::Colour>& colors);
 
 private:
     XcytheLookAndFeel_v1 newLNF;
@@ -90,8 +114,8 @@ private:
 
     DistortionTestAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;
+    PresetPanel presetPanel;
 
-    typedef juce::AudioProcessorValueTreeState APVTS;
     std::unique_ptr<APVTS::SliderAttachment> inputGainAttach;     
     std::unique_ptr<APVTS::SliderAttachment> outputGainAttach;
     std::unique_ptr<APVTS::SliderAttachment> clipAttach;

@@ -24,6 +24,130 @@ void ClipHolder::setClipper(int newClipper) { currentClipper = newClipper; }
 
 Clipper<float>* ClipHolder::getClipper() const { return clippers[currentClipper]; }
 //==============================================================================
+juce::File PresetManager::defaultDir{ juce::File::getSpecialLocation(
+    juce::File::SpecialLocationType::commonDocumentsDirectory)
+    .getChildFile(ProjectInfo::companyName)
+    .getChildFile(ProjectInfo::projectName) };
+
+const juce::String PresetManager::extention{ "prexet" };
+
+PresetManager::PresetManager(APVTS& _apvts, juce::ValueTree& _defaultTree) : apvts(_apvts), defaultTree(_defaultTree)
+{
+    if (!defaultDir.exists())
+    {
+        const juce::Result result{ defaultDir.createDirectory() };
+        if (result.failed())
+        {
+            DBG("Failed to create default directory");
+            jassertfalse;
+        }
+    }
+    apvts.state.addListener(this);
+    currentPreset.referTo(apvts.state.getPropertyAsValue(juce::Identifier("presetName"), nullptr));
+}
+
+PresetManager::~PresetManager() { apvts.state.removeListener(this); }
+
+void PresetManager::newPreset()
+{
+    apvts.replaceState(defaultTree.createCopy());
+    currentPreset.setValue("-init-");
+}
+
+void PresetManager::savePreset(const juce::String& presetName)
+{
+    if (presetName.isEmpty()) { return; }
+    currentPreset.setValue(presetName);
+    const juce::File presetToSave{ defaultDir.getChildFile(presetName + "." + extention) };
+    const auto xml{ apvts.state.createXml() };
+    if (xml == nullptr)
+    {
+        DBG("Failed to create XML from current value tree");
+        jassertfalse;
+        return;
+    }
+    if (!xml->writeTo(presetToSave))
+    {
+        DBG("Failed to write XML value tree to preset file");
+        jassertfalse;
+        return;
+    }
+    updatePresetList();
+}
+
+void PresetManager::loadPreset(const juce::String& presetName)
+{
+    if (presetName.isEmpty()) { return; }
+    const juce::File presetToLoad{ defaultDir.getChildFile(presetName + "." + extention) };
+    if (!presetToLoad.exists())
+    {
+        DBG("Failed to load preset file");
+        jassertfalse;
+        return;
+    }
+    const auto xml{ juce::XmlDocument(presetToLoad).getDocumentElement() };
+    if (xml == nullptr)
+    {
+        DBG("Failed to create XML value tree from loaded preset");
+        jassertfalse;
+        return;
+    }
+    apvts.replaceState(juce::ValueTree::fromXml(*xml));
+    currentPreset.setValue(presetName);
+}
+
+void PresetManager::deletePreset(const juce::String& presetName)
+{
+    if (presetName.isEmpty()) { return; }
+    const juce::File presetToDelete{ defaultDir.getChildFile(presetName + "." + extention) };
+    if (currentPreset.toString() == "-init-") { return; }
+    if (!presetToDelete.exists())
+    {
+        DBG("Preset is not saved to be deleted");
+        jassertfalse;
+        return;
+    }
+    if (!presetToDelete.deleteFile())
+    {
+        DBG("Failed to delete current preset file");
+        jassertfalse;
+        return;
+    }
+    updatePresetList();
+    currentPreset.setValue("-init-");
+    apvts.replaceState(defaultTree.createCopy());
+}
+
+void PresetManager::updatePresetList()
+{
+    presetList.clear(); // нужно чистить перед каждым добавлением элементов
+    const auto fileList{ defaultDir.findChildFiles(juce::File::TypesOfFileToFind::findFiles, false, "*." + extention)};
+    for (const auto& file : fileList) { presetList.add(file.getFileNameWithoutExtension()); }
+}
+
+int PresetManager::nextPreset()
+{
+    if (presetList.isEmpty()) { return -1; }
+    const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
+    int nextIndex{ currentIndex >= presetList.size() - 1 ? 0 : currentIndex + 1 };
+    loadPreset(presetList.getReference(nextIndex));
+    return nextIndex + presetListIdOffset; // смещение для обхода строк New, Load, Save, Delete в комбобоксе
+}
+
+int PresetManager::previousPreset()
+{
+    if (presetList.isEmpty()) { return -1; }
+    const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
+    int prevIndex{ currentIndex <= 0 ? presetList.size() - 1 : currentIndex - 1 };
+    loadPreset(presetList.getReference(prevIndex));
+    return prevIndex + presetListIdOffset;
+}
+
+void PresetManager::valueTreeRedirected(juce::ValueTree& changedTree)
+{
+    currentPreset.referTo(changedTree.getPropertyAsValue(juce::Identifier("presetName"), nullptr));
+}
+//==============================================================================
 DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
         : AudioProcessor(BusesProperties()
@@ -39,6 +163,9 @@ DistortionTestAudioProcessor::DistortionTestAudioProcessor()
 {
     apvts.state.setProperty(juce::Identifier("presetName"), "-init-", nullptr);
     apvts.state.setProperty(juce::Identifier("version"), ProjectInfo::versionString, nullptr);
+    defaultTree = apvts.copyState(); // сохранение дефолтного дерева для функции создания нового пресета
+    manager = std::make_unique<PresetManager>(apvts, defaultTree);
+    manager->updatePresetList();
 }
 
 DistortionTestAudioProcessor::~DistortionTestAudioProcessor()
@@ -270,7 +397,6 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new DistortionTestAudioProcessor();
 }
 
-typedef juce::AudioProcessorValueTreeState APVTS;
 APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
 {
     juce::StringArray clipTypes{ "Hard Clip", "Soft Clip", "Fold Back", "Sine Fold", "Linear Fold" };
@@ -284,3 +410,5 @@ APVTS::ParameterLayout DistortionTestAudioProcessor::createParameterLayout()
         std::make_unique<juce::AudioParameterBool>("Link", "Link", true)
     };
 }
+
+PresetManager& DistortionTestAudioProcessor::getPresetManager() { return *manager; }
