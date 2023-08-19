@@ -100,6 +100,7 @@ void PresetManager::deletePreset(const juce::String& presetName)
 {
     if (presetName.isEmpty()) { return; }
     const juce::File presetToDelete{ defaultDir.getChildFile(presetName + "." + extention) };
+    if (currentPreset.toString() == "-init-") { return; }
     if (!presetToDelete.exists())
     {
         DBG("Preset is not saved to be deleted");
