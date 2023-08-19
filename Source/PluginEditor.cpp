@@ -549,7 +549,23 @@ DistortionTestAudioProcessorEditor::~DistortionTestAudioProcessorEditor()
 //==============================================================================
 void DistortionTestAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colours::black);
+    /* Для отрисовки фона заголовка и тела окна плагина использован
+    класс std::map<key, T>. Это карта, содержащая значения и их ключи.
+    Заполнение карты производится с помощью функции emplace(),
+    принимающей в себя объект типа std::pair<key, T>, который можно
+    сгенерировать, используя функцию std::make_pair. Типы, указанные
+    в шаблоне и передаваемые в функцию должны соответствовать. */
+    auto bounds{ getLocalBounds().toFloat() };
+    juce::ColourGradient gradient;
+    std::map<double, juce::Colour> colors;
+    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2)));
+    colors.emplace(std::make_pair(0.5, juce::Colours::black));
+    colors.emplace(std::make_pair(1.0, juce::Colours::black.contrasting(0.2)));
+    drawBackground(g, gradient, bounds.removeFromTop(40), colors);
+    colors.clear();
+    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2)));
+    colors.emplace(std::make_pair(0.2, juce::Colours::black));
+    drawBackground(g, gradient, bounds, colors);
 }
 
 void DistortionTestAudioProcessorEditor::resized()
@@ -558,7 +574,7 @@ void DistortionTestAudioProcessorEditor::resized()
     int buttonHeight{ 22 };
     int componentWidth{ 100 };
     auto bounds{ getLocalBounds() };
-    auto header{ bounds.removeFromTop(40) }; // под лого и название
+    auto headerBounds{ bounds.removeFromTop(40) }; // под лого и название
     bounds.reduce(spacing, spacing);
     outputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
     bounds.removeFromRight(spacing);
@@ -573,5 +589,18 @@ void DistortionTestAudioProcessorEditor::resized()
     bypassButton.setBounds(bounds.removeFromLeft(componentWidth));
     bounds.removeFromLeft(spacing);
     linkButton.setBounds(bounds.removeFromLeft(componentWidth));
-    presetPanel.setBounds(header.removeFromRight(getWidth() * 0.5f).reduced(9));
+    presetPanel.setBounds(headerBounds.removeFromRight(getWidth() * 0.5f).reduced(9));
+}
+
+void DistortionTestAudioProcessorEditor::drawBackground(juce::Graphics& g,
+                                                        juce::ColourGradient& gradient,
+                                                        const juce::Rectangle<float>& bounds,
+                                                        std::map<double, juce::Colour>& colors)
+{
+    for (const auto& [proportion, color] : colors) { gradient.addColour(proportion, color); }        
+    gradient.point1 = bounds.getBottomLeft();
+    gradient.point2 = bounds.getTopLeft();
+    g.setGradientFill(gradient);
+    g.fillRect(bounds);
+    gradient.clearColours();
 }

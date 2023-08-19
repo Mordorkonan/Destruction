@@ -98,6 +98,10 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    void drawBackground(juce::Graphics& g,
+                        juce::ColourGradient& gradient,
+                        const juce::Rectangle<float>& bounds,
+                        std::map<double, juce::Colour>& colors);
 
 private:
     XcytheLookAndFeel_v1 newLNF;

@@ -13,7 +13,7 @@
 #define OSC false
 //========================================
 // Clipper correction coefficients
-#define HARDCLIP_COEF 0.25
+#define HARDCLIP_COEF 0.75
 #define SOFTCLIP_COEF 1.25
 #define FOLDBACK_COEF 0.5
 #define SINEFOLD_COEF 0.75
