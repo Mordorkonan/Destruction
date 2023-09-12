@@ -41,6 +41,10 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     dot.setCentre(dotPosition.x, dotPosition.y);
     g.setColour(juce::Colours::orange);
     g.fillEllipse(dot);
+    juce::Path glowPath;
+    glowPath.addRectangle(dot);
+    juce::DropShadow dotGlow{ juce::Colours::orange, 5, juce::Point<int>(0, 0) };
+    dotGlow.drawForPath(g, glowPath);
     // добавление арок вокруг ручки
     juce::Path path;
     float startAngle{ 0.0f };
@@ -439,7 +443,6 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     : AudioProcessorEditor (&p), audioProcessor (p), presetPanel(newLNF, audioProcessor.getPresetManager())
 {
     setSize (660, 210);
-    setResizable(true, true);
     juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
     font.setHeight(18.0f);
     addAndMakeVisible(presetPanel);
