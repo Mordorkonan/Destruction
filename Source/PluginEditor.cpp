@@ -66,6 +66,25 @@ void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int
     g.strokePath(path, juce::PathStrokeType(arcThickness));
 }
 
+void XcytheLookAndFeel_v1::drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                                          bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    /* Переопределение данной функции необходимо по следующей причине.
+    При создании кнопки внутри окна AlertWindow, её конструирование происходит
+    на основе вызова функции paintButton(), задействующей внутри себя вызов
+    функций drawButtonBackground() и drawButtonText() класса LookAndFeel.
+    Для обычных кнопок в MainComponent данный метод, судя по всему,
+    не используется автоматически, либо используется с текущим LookAndFeel.
+    В случае AlertWindow происходит дублирование текста на кнопке из-за 
+    отрисовки текста внутри метода drawButtonBackground(). 
+    Судя по всему, кнопки внутри AlertWindow и MainComponent относятся к 
+    разным классам. Прописывание отрисовки текста в данной функции не 
+    влечёт за собой отрисовку текста на основных кнопках, но при этом 
+    добавляет его на кнопки AlertWindow. Поэтому имплементация этой 
+    функции пустая, а отрисовка текста перенесена в drawButtonInternal(),
+    что само по себе, вероятно, семантически не корректно. */
+}
+
 void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
                                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
@@ -179,6 +198,50 @@ void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width,
         g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
         g.drawRect(0, 0, width, height);
     #endif
+}
+
+void XcytheLookAndFeel_v1::drawAlertBox(juce::Graphics& g, juce::AlertWindow& alert,
+                                        const juce::Rectangle<int>& textArea, juce::TextLayout& textLayout)
+{
+    float cornerSize{ 6.0f };
+    auto bounds{ alert.getLocalBounds().toFloat() };
+    juce::ColourGradient gradient;
+    gradient.addColour(0.00, juce::Colours::black.contrasting(0.20f));
+    gradient.addColour(0.25, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(0.75, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(1.00, juce::Colours::black.contrasting(0.20f));
+    gradient.point1 = bounds.getBottomLeft();
+    gradient.point2 = bounds.getTopLeft();
+    g.setGradientFill(gradient);
+    g.fillRoundedRectangle(bounds, cornerSize);
+    gradient.clearColours();
+    g.setColour(juce::Colours::orange);
+    g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
+    g.setColour(juce::Colours::white);
+    bounds.reduce(10.0f, 10.0f);
+    textLayout.draw(g, bounds);
+    //for (auto* child : alert.getChildren())
+    //{
+    //    auto* button{ dynamic_cast<juce::TextButton*>(child) };
+    //    if (button != nullptr) { button->setButtonText("Y"); }
+    //}
+}
+
+juce::Font XcytheLookAndFeel_v1::getTextButtonFont(juce::TextButton& button, int buttonHeight) { return getAlertWindowTitleFont(); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowTitleFont() { return font.withHeight(22.0f).withStyle(juce::Font::bold); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowMessageFont() { return font.withHeight(18.0f); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowFont() { return font.withHeight(16.0f); }
+
+int XcytheLookAndFeel_v1::getAlertWindowButtonHeight() { return 22; }
+
+juce::Array<int> XcytheLookAndFeel_v1::getWidthsForTextButtons(juce::AlertWindow& aw, const juce::Array<juce::TextButton*>& tb)
+{
+    juce::Array<int> buttonWidths;
+    for (int i = 0; i < tb.size(); ++i) { buttonWidths.add(100); }
+    return buttonWidths;
 }
 
 juce::Path XcytheLookAndFeel_v1::createFrame(const juce::Rectangle<float>& bounds, FrameOrientation orientation)
@@ -352,7 +415,7 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
     else { presetMenu.setSelectedItemIndex(presetMenuIndex + manager.presetListIdOffset); }    
     presetMenu.setLookAndFeel(&lnf);
     addAndMakeVisible(presetMenu);
-    presetMenu.onChange = [&]()
+    presetMenu.onChange = [this]()
     {
         if (presetMenu.getSelectedId() == PresetMenuIDs::New)
         {
@@ -391,9 +454,49 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
         }
         else if (presetMenu.getSelectedId() == PresetMenuIDs::Delete)
         {
-            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
-            manager.deletePreset(manager.currentPreset.toString());
-            updatePresetMenu();
+            if (manager.currentPreset.toString() == "-init-")
+            {
+                presetMenu.setSelectedId(0);
+                return;
+            }
+            juce::MessageBoxOptions mbo
+            {
+                juce::MessageBoxOptions()
+                .withTitle("Delete preset")
+                .withMessage("Do you want to delete current preset?")
+                .withIconType(juce::MessageBoxIconType::NoIcon)
+                .withAssociatedComponent(nullptr)
+            };
+            /* AlertWindow определяется как unique_ptr для того,
+            чтобы внутри лямбды ModalCallbackFunction.
+            ПРИМЕЧАНИЕ! Сначала применяется LookAndFeel, затем
+            добавляются кнопки, потому что функция addButton()
+            внутри вызывает текущий LookAndFeel, в котором определена
+            ширина кнопок для корректного размещения в окне. */
+            aw = std::make_unique<juce::AlertWindow>(mbo.getTitle(),
+                                                     mbo.getMessage(),
+                                                     mbo.getIconType(),
+                                                     mbo.getAssociatedComponent());
+            aw->setLookAndFeel(&lnf);
+            aw->addButton("Yes", 1);
+            aw->addButton("No", 0);
+            aw->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
+                {
+                    if (result == 1)
+                    {
+                        presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+                        manager.deletePreset(manager.currentPreset.toString());
+                        updatePresetMenu();
+                    }
+                    else
+                    {
+                        presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
+                            manager.currentPreset.toString()) + manager.presetListIdOffset,
+                            juce::NotificationType::dontSendNotification);
+                    }
+                    aw->exitModalState(result);
+                    aw->setVisible(false);
+                }));
         }
         else // пресеты
         {

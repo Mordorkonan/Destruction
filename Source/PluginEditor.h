@@ -24,6 +24,8 @@ public:
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                           float sliderPosProportional, float rotaryStartAngle,
                           float rotaryEndAngle, juce::Slider& slider) override;
+    void drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                        bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
@@ -41,6 +43,14 @@ public:
                            const juce::String& shortcutKeyText,
                            const juce::Drawable* icon, const juce::Colour* const textColourToUse) override;
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
+    void drawAlertBox(juce::Graphics& g, juce::AlertWindow& alert,
+                      const juce::Rectangle<int>& textArea, juce::TextLayout& textLayout) override;
+    juce::Font getTextButtonFont(juce::TextButton& button, int buttonHeight) override;
+    juce::Font getAlertWindowTitleFont() override;
+    juce::Font getAlertWindowMessageFont() override;
+    juce::Font getAlertWindowFont() override;
+    int getAlertWindowButtonHeight() override;
+    juce::Array<int> getWidthsForTextButtons(juce::AlertWindow&, const juce::Array<juce::TextButton*>&) override;
     juce::Path createFrame(const juce::Rectangle<float>& bounds, FrameOrientation orientation);
 private:
     juce::Font font;
@@ -90,6 +100,7 @@ private:
     juce::ComboBox presetMenu;
     PresetManager& manager;
     std::unique_ptr<juce::FileChooser> fileChooser;
+    std::unique_ptr<juce::AlertWindow> aw;
 };
 //==============================================================================
 class Plate : public juce::Component
