@@ -220,11 +220,6 @@ void XcytheLookAndFeel_v1::drawAlertBox(juce::Graphics& g, juce::AlertWindow& al
     g.setColour(juce::Colours::white);
     bounds.reduce(10.0f, 10.0f);
     textLayout.draw(g, bounds);
-    //for (auto* child : alert.getChildren())
-    //{
-    //    auto* button{ dynamic_cast<juce::TextButton*>(child) };
-    //    if (button != nullptr) { button->setButtonText("Y"); }
-    //}
 }
 
 juce::Font XcytheLookAndFeel_v1::getTextButtonFont(juce::TextButton& button, int buttonHeight) { return getAlertWindowTitleFont(); }
@@ -462,7 +457,7 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
             juce::MessageBoxOptions mbo
             {
                 juce::MessageBoxOptions()
-                .withTitle("Delete preset")
+                .withTitle("")
                 .withMessage("Do you want to delete current preset?")
                 .withIconType(juce::MessageBoxIconType::NoIcon)
                 .withAssociatedComponent(nullptr)
