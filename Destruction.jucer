@@ -6,6 +6,8 @@
   <MAINGROUP id="y6MT15" name="Destruction">
     <GROUP id="{71C368AF-64EB-9DA7-7C8D-7E3B8A87F80F}" name="Source">
       <GROUP id="{CD302618-499E-1185-8733-1F80419C29A9}" name="Assets">
+        <FILE id="IF2POh" name="Logo_transparent.png" compile="0" resource="1"
+              file="Source/Assets/Logo_transparent.png"/>
         <FILE id="FJBuic" name="MagistralTT.ttf" compile="0" resource="1" file="Source/Assets/MagistralTT.ttf"/>
       </GROUP>
       <FILE id="Va5hZy" name="PluginProcessor.cpp" compile="1" resource="0"

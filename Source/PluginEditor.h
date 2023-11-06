@@ -134,6 +134,9 @@ private:
     juce::ComboBox clipperBox{ "Clippers" };
     juce::ToggleButton linkButton{ "Link" };
     juce::ToggleButton bypassButton{ "Bypass" };
+    juce::Label pluginName{ "Destruction" };
+    juce::Label version{ "Version"};
+    juce::Image logo;
 
     DestructionAudioProcessor& audioProcessor;
     TransientFunctionGraph graph;

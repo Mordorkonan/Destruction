@@ -546,6 +546,8 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     addAndMakeVisible(presetPanel);
     addAndMakeVisible(sliderPlate);
     addAndMakeVisible(graphPlate);
+    addAndMakeVisible(pluginName);
+    addAndMakeVisible(version);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
@@ -643,6 +645,16 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     bypassAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Bypass", bypassButton);
     linkAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Link", linkButton);
     clipperBoxAttach = std::make_unique<APVTS::ComboBoxAttachment>(audioProcessor.apvts, "Clipper Type", clipperBox);
+    //==================================================
+    // header settings
+    logo = juce::ImageCache::getFromMemory(BinaryData::Logo_transparent_png, BinaryData::Logo_transparent_pngSize);
+    font.setHeight(26.0f);
+    pluginName.setFont(font.withStyle(juce::Font::FontStyleFlags::italic));
+    pluginName.setText(juce::String(ProjectInfo::projectName).toUpperCase(), juce::NotificationType::dontSendNotification);
+    pluginName.setJustificationType(juce::Justification::centredLeft);
+    version.setFont(font.withHeight(FONT_HEIGHT).withStyle(juce::Font::FontStyleFlags::plain));
+    version.setText(juce::String("v.") + juce::String(ProjectInfo::versionString), juce::NotificationType::dontSendNotification);
+    version.setJustificationType(juce::Justification::centred);
 }
 
 DestructionAudioProcessorEditor::~DestructionAudioProcessorEditor()
@@ -674,6 +686,9 @@ void DestructionAudioProcessorEditor::paint (juce::Graphics& g)
     colors.emplace(std::make_pair(1.0, juce::Colours::orange.withAlpha(0.8f)));
     drawBackground(g, gradient, bounds.withHeight(8.0f), colors);
 
+    juce::Rectangle<float> logoBounds{ 0.0f, 0.0f, 50.0f, 40.0f };
+    g.drawImage(logo, logoBounds, juce::RectanglePlacement::centred, false);
+
     sliderPlateShadow = std::make_unique<juce::DropShadow>(juce::Colours::orange, 8, juce::Point<int>(5, 5));
     graphPlateShadow  = std::make_unique<juce::DropShadow>(juce::Colours::orange, 8, juce::Point<int>(5, 5));
     juce::Path path;
@@ -703,6 +718,9 @@ void DestructionAudioProcessorEditor::resized()
     bypassButton.setBounds(plateBounds.removeFromRight(staticBounds.proportionOfWidth(0.3)).reduced(spacing));
     clipperBox.setBounds(plateBounds.reduced(spacing));
     presetPanel.setBounds(headerBounds.removeFromRight(headerBounds.proportionOfWidth(0.5)).reduced(9));
+    headerBounds.removeFromLeft(50 + 10); // под лого
+    pluginName.setBounds(headerBounds.removeFromLeft(200));
+    version.setBounds(headerBounds);
 }
 
 void DestructionAudioProcessorEditor::drawBackground(juce::Graphics& g,
