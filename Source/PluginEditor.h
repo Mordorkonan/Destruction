@@ -14,7 +14,7 @@
 #define FONT_HEIGHT 18.0f
 #define LABEL_HEIGHT 25
 //==============================================================================
-enum PresetMenuIDs { New = 1, Save, Load, Delete, PresetList };
+enum PresetMenuIDs { NoSelect, New, Save, Load, Delete, PresetList };
 enum FrameOrientation { None, Left, Right };
 //==============================================================================
 class XcytheLookAndFeel_v1 : public juce::LookAndFeel_V4
@@ -91,9 +91,11 @@ class PresetPanel : public juce::Component
 {
 public:
     PresetPanel(juce::LookAndFeel& _lnf, PresetManager& manager);
+    juce::Label* getPresetNameLabel();
     void updatePresetMenu();
     void resized() override;
 private:
+    juce::Label presetNameLabel{ "Preset Name", "-init-"};
     juce::LookAndFeel& lnf;
     juce::TextButton previousButton{ "Previous" };
     juce::TextButton nextButton{ "Next" };

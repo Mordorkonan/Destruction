@@ -384,13 +384,15 @@ void TransientFunctionGraph::resized()
 //==============================================================================
 PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf), manager(pm)
 {
+    addAndMakeVisible(presetNameLabel); // определяется за полупрозрачным комбобоксом
+
     previousButton.setButtonText("<");
     previousButton.setLookAndFeel(&lnf);
     addAndMakeVisible(previousButton);
     previousButton.onClick = [&]()
     {
         const int index{ manager.previousPreset() };
-        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+        presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
     };
 
     nextButton.setButtonText(">");
@@ -399,25 +401,30 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
     nextButton.onClick = [&]()
     {
         const int index{ manager.nextPreset() };
-        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+        presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
     };
 
     updatePresetMenu();
-    presetMenu.setTextWhenNothingSelected("-init-");
-    presetMenu.setTextWhenNoChoicesAvailable("No saved presets");
+    presetMenu.setTextWhenNothingSelected("");
     const auto presetMenuIndex{ manager.presetList.indexOf(manager.currentPreset.toString()) };
-    if (presetMenuIndex == -1) { presetMenu.setSelectedItemIndex(presetMenuIndex); }
-    else { presetMenu.setSelectedItemIndex(presetMenuIndex + manager.presetListIdOffset); }    
+    juce::String initialPresetName;
+    if (presetMenuIndex == -1) { initialPresetName = juce::String("-init-"); }
+    else { initialPresetName = manager.currentPreset.toString(); }
+    presetNameLabel.setText(initialPresetName, juce::NotificationType::dontSendNotification);
     presetMenu.setLookAndFeel(&lnf);
     addAndMakeVisible(presetMenu);
     presetMenu.onChange = [this]()
     {
-        if (presetMenu.getSelectedId() == PresetMenuIDs::New)
+        switch (presetMenu.getSelectedId())
+        {
+        case (PresetMenuIDs::NoSelect): break;
+        case (PresetMenuIDs::New):
         {
             presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
             manager.newPreset();
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Save)
+        case (PresetMenuIDs::Save):
         {
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please enter the name of the preset to save",
@@ -428,12 +435,12 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                     const auto fileToSave{ chooser.getResult() };
                     manager.savePreset(fileToSave.getFileNameWithoutExtension());
                     updatePresetMenu();
-                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                        manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
                 });
-
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Load)
+        case (PresetMenuIDs::Load):
         {
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please choose the preset to load",
@@ -443,13 +450,15 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                 {
                     const auto fileToLoad{ chooser.getResult() };
                     manager.loadPreset(fileToLoad.getFileNameWithoutExtension());
-                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                        manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    manager.currentPreset.setValue(manager.currentPreset.toString());
+                    presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
                 });
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Delete)
+        case (PresetMenuIDs::Delete):
         {
-            if (manager.currentPreset.toString() == "-init-")
+            if (presetNameLabel.getText() == "-init-")
             {
                 presetMenu.setSelectedId(0);
                 return;
@@ -463,42 +472,46 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                 .withAssociatedComponent(nullptr)
             };
             /* AlertWindow определяется как unique_ptr для того,
-            чтобы внутри лямбды ModalCallbackFunction.
+            чтобы вызвать внутри лямбды ModalCallbackFunction.
             ПРИМЕЧАНИЕ! Сначала применяется LookAndFeel, затем
             добавляются кнопки, потому что функция addButton()
             внутри вызывает текущий LookAndFeel, в котором определена
             ширина кнопок для корректного размещения в окне. */
             aw = std::make_unique<juce::AlertWindow>(mbo.getTitle(),
-                                                     mbo.getMessage(),
-                                                     mbo.getIconType(),
-                                                     mbo.getAssociatedComponent());
+                mbo.getMessage(),
+                mbo.getIconType(),
+                mbo.getAssociatedComponent());
             aw->setLookAndFeel(&lnf);
             aw->addButton("Yes", 1);
             aw->addButton("No", 0);
             aw->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
                 {
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
                     if (result == 1)
                     {
-                        presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
-                        manager.deletePreset(manager.currentPreset.toString());
+                        manager.deletePreset(presetNameLabel.getText());
                         updatePresetMenu();
-                    }
-                    else
-                    {
-                        presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                            manager.currentPreset.toString()) + manager.presetListIdOffset,
-                            juce::NotificationType::dontSendNotification);
+                        presetNameLabel.setText("-init-", juce::NotificationType::dontSendNotification);
                     }
                     aw->exitModalState(result);
                     aw->setVisible(false);
                 }));
+            break;
         }
-        else // пресеты
+        default:
         {
-            manager.loadPreset(presetMenu.getItemText(presetMenu.getSelectedItemIndex()));
+            auto presetName{ presetMenu.getItemText(presetMenu.getSelectedItemIndex()) };
+            manager.loadPreset(presetName);
+            manager.currentPreset.setValue(presetName);
+            presetNameLabel.setText(presetName, juce::NotificationType::dontSendNotification);
+            presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+            break;
         }
+        } // end switch
     };
 }
+
+juce::Label* PresetPanel::getPresetNameLabel() { return &presetNameLabel; }
 
 void PresetPanel::updatePresetMenu()
 {
@@ -520,6 +533,7 @@ void PresetPanel::resized()
     previousButton.setBounds(bounds.removeFromLeft(componentWidth));
     presetMenu.setBounds(bounds.removeFromLeft(componentWidth * 4));
     nextButton.setBounds(bounds.removeFromLeft(componentWidth));
+    presetNameLabel.setBounds(presetMenu.getBounds());
 }
 //==============================================================================
 void Plate::paint(juce::Graphics& g)
@@ -548,6 +562,10 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     addAndMakeVisible(graphPlate);
     addAndMakeVisible(pluginName);
     addAndMakeVisible(version);
+
+    auto presetNameLabel{ presetPanel.getPresetNameLabel() };
+    presetNameLabel->setFont(font);
+    presetNameLabel->setJustificationType(juce::Justification::centred);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
