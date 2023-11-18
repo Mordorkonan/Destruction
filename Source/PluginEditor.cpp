@@ -420,6 +420,7 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
         case (PresetMenuIDs::NoSelect): break;
         case (PresetMenuIDs::New):
         {
+            presetNameLabel.setText(juce::String("-init-"), juce::NotificationType::dontSendNotification);
             presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
             manager.newPreset();
             break;
