@@ -17,7 +17,7 @@ ClipHolder::ClipHolder()
     clippers.push_back(dynamic_cast<Clipper<float>*>(sineFoldClipper.get()));
     clippers.push_back(dynamic_cast<Clipper<float>*>(linearFoldClipper.get()));
     
-    currentClipper = hard; // óáðàòü, êîãäà áóäåò äåðåâî ïàðàìåòðîâ
+    currentClipper = hard; // убрать, когда будет дерево параметров
 }
 
 void ClipHolder::setClipper(int newClipper) { currentClipper = newClipper; }
@@ -120,7 +120,7 @@ void PresetManager::deletePreset(const juce::String& presetName)
 
 void PresetManager::updatePresetList()
 {
-    presetList.clear(); // íóæíî ÷èñòèòü ïåðåä êàæäûì äîáàâëåíèåì ýëåìåíòîâ
+    presetList.clear(); // нужно чистить перед каждым добавлением элементов
     const auto fileList{ defaultDir.findChildFiles(juce::File::TypesOfFileToFind::findFiles, false, "*." + extention)};
     for (const auto& file : fileList) { presetList.add(file.getFileNameWithoutExtension()); }
 }
@@ -131,7 +131,7 @@ int PresetManager::nextPreset()
     const int currentIndex{ presetList.indexOf(currentPreset.toString()) };
     int nextIndex{ currentIndex >= presetList.size() - 1 ? 0 : currentIndex + 1 };
     loadPreset(presetList.getReference(nextIndex));
-    return nextIndex + presetListIdOffset; // ñìåùåíèå äëÿ îáõîäà ñòðîê New, Load, Save, Delete â êîìáîáîêñå
+    return nextIndex + presetListIdOffset; // смещение для обхода строк New, Load, Save, Delete в комбобоксе
 }
 
 int PresetManager::previousPreset()
@@ -163,7 +163,7 @@ DestructionAudioProcessor::DestructionAudioProcessor()
 {
     apvts.state.setProperty(juce::Identifier("presetName"), "-init-", nullptr);
     apvts.state.setProperty(juce::Identifier("version"), ProjectInfo::versionString, nullptr);
-    defaultTree = apvts.copyState(); // ñîõðàíåíèå äåôîëòíîãî äåðåâà äëÿ ôóíêöèè ñîçäàíèÿ íîâîãî ïðåñåòà
+    defaultTree = apvts.copyState(); // сохранение дефолтного дерева для функции создания нового пресета
     manager = std::make_unique<PresetManager>(apvts, defaultTree);
     manager->updatePresetList();
 }
@@ -301,7 +301,7 @@ void DestructionAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
             buffer.setSample(1, i, sample2);
         }
     #endif
-    // óêàçûâàåì óñëîâíûé ïîðîã ìàãíèòóäû â 0,05 ÷òîáû ñíèçèòü íàãðóçêó íà ïðîöåññîð íà õîëîñòîì õîäå
+    // указываем условный порог магнитуды в 0,05 чтобы снизить нагрузку на процессор на холостом ходе
     if (!gainController.getBypassState() && buffer.getMagnitude(0, buffer.getNumSamples()) >= 0.00001)
     {
         // input gain
@@ -343,16 +343,44 @@ juce::AudioProcessorEditor* DestructionAudioProcessor::createEditor()
     return new DestructionAudioProcessorEditor (*this);
 }
 
+void DestructionAudioProcessor::updatePluginState()
+{
+    double newInputGainDb{ static_cast<double>(apvts.getRawParameterValue("Input Gain")->load()) };
+    double newOutputGainDb{ static_cast<double>(apvts.getRawParameterValue("Output Gain")->load()) };
+    double newClipGainDb{ static_cast<double>(apvts.getRawParameterValue("Clip")->load()) };
+    bool newBypass{ static_cast<bool>(apvts.getRawParameterValue("Bypass")->load()) };
+    bool newLink{ static_cast<bool>(apvts.getRawParameterValue("Link")->load()) };
+    int newClipperType{ static_cast<int>(apvts.getRawParameterValue("Clipper Type")->load()) };
+
+    gainController.setInputGainLevelInDb(newInputGainDb);
+    gainController.setOutputGainLevelInDb(newOutputGainDb);
+    gainController.setBypassState(newBypass);
+    clipHolder.setClipper(newClipperType);
+    clipHolder.getClipper()->updateMultiplier(newClipGainDb);
+    if (newLink)
+    {
+        if (gainController.getInputGainLevelInDb() < 0)
+        {
+            gainController.setInputGainLevelInDb(-gainController.getOutputGainLevelInDb());
+        }
+        else
+        {
+            gainController.setOutputGainLevelInDb(-gainController.getInputGainLevelInDb());
+        }
+    }
+    DBG("input gain = " << gainController.getInputGainLevelInDb() << " | outputGain = " << gainController.getOutputGainLevelInDb());
+}
+
 //==============================================================================
 void DestructionAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // Ìåòîä 1 - Çàïèñü â ñòðèì
+    // Метод 1 - Запись в стрим
     /*
     juce::MemoryOutputStream mos{ destData, false };
     if (apvts.state.isValid()) { apvts.state.writeToStream(mos); }
     */
 
-    // Ìåòîä 2 - Çàïèñü xml â áèíàðíèê
+    // Метод 2 - Запись xml в бинарник
     if (apvts.state.isValid())
     {
         const auto xml{ apvts.copyState().createXml() };
@@ -362,21 +390,24 @@ void DestructionAudioProcessor::getStateInformation (juce::MemoryBlock& destData
 
 void DestructionAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // Ìåòîä 1 - ×òåíèå èç ñòðèìà èëè íàïðÿìóþ èç äàííûõ
+    // Метод 1 - Чтение из стрима или напрямую из данных
     /*
     juce::ValueTree tempTree{ juce::ValueTree::readFromData(data, static_cast<size_t>(sizeInBytes)) };
     if (tempTree.isValid() && tempTree == apvts.state) { apvts.replaceState(tempTree); }
     else { jassertfalse; }
     */
 
-    // Ìåòîä 2 - ×òåíèå èç áèíàðíèêà â xml
+    // Метод 2 - Чтение из бинарника в xml
     const auto xml{ getXmlFromBinary(data, sizeInBytes) };
-    if (xml != nullptr) // ïðîâåðêà îáÿçàòåëüíà, èíà÷å âûëåçàåò jassert
+    if (xml != nullptr) // проверка обязательна, иначе вылезает jassert
     {
         juce::ValueTree tempTree{ juce::ValueTree::fromXml(*xml) };
-        if (tempTree.isValid()) { apvts.replaceState(tempTree); }
+        if (tempTree.isValid())
+        {
+            apvts.replaceState(tempTree);
+            updatePluginState();
+        }
     }
-    else { return; }
 }
 //==============================================================================
 void GainController::setInputGainLevelInDb(const double& value) { inputGainInDb = value; }

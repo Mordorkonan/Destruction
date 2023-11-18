@@ -17,94 +17,100 @@ XcytheLookAndFeel_v1::XcytheLookAndFeel_v1()
 
 void XcytheLookAndFeel_v1::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                                             float sliderPosProportional, float rotaryStartAngle,
-                                            float rotaryEndAngle, juce::Slider& slider)
+                                            float rotaryEndAngle, juce::Slider&)
 {
-    float lineThickness{ 2.0f };
-    auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(lineThickness / 2);
-    g.setColour(juce::Colours::white);
+    float arcThickness{ 6.0f };
+    float radius{ juce::jmin<float>(static_cast<float>(width), static_cast<float>(height)) };
+    auto bounds{ juce::Rectangle<int>(x, y, width, height).toFloat().withSizeKeepingCentre(radius, radius).reduced(arcThickness * 0.5f) };
+    auto knobBounds{ bounds.reduced(arcThickness + 2) };
+    // заливка ручки
+    juce::ColourGradient gradient;
+    gradient.addColour(0.0, juce::Colours::black.contrasting(0.25f));
+    gradient.addColour(0.1, juce::Colours::black.contrasting(0.25f));
+    gradient.addColour(0.9, juce::Colours::black.contrasting(0.12f));
+    gradient.point1 = knobBounds.getTopLeft();
+    gradient.point2 = knobBounds.getBottomLeft();
+    g.setGradientFill(gradient);
+    g.fillEllipse(knobBounds);
+    gradient.clearColours();
+    // добавление точки на ручке
+    auto remappedAngle{ juce::jmap(sliderPosProportional, rotaryStartAngle, rotaryEndAngle) };
+    auto dot{ juce::Rectangle<float>(0.0f, 0.0f, arcThickness - 2.0f, arcThickness - 2.0f) };
+    auto dotPosition{ juce::Point<float>(bounds.getCentreX(), bounds.getCentreY())
+        .getPointOnCircumference(knobBounds.getHeight() * 0.5f - 10.0f, remappedAngle) };
+    dot.setCentre(dotPosition.x, dotPosition.y);
+    g.setColour(juce::Colours::orange);
+    g.fillEllipse(dot);
+    juce::Path glowPath;
+    glowPath.addRectangle(dot);
+    juce::DropShadow dotGlow{ juce::Colours::orange, 5, juce::Point<int>(0, 0) };
+    dotGlow.drawForPath(g, glowPath);
+    // добавление арок вокруг ручки
+    juce::Path path;
+    float startAngle{ 0.0f };
+    float endAngle{ 0.0f };
+    for (int i = 0; i < 6; ++i)
+    {
+        startAngle = rotaryStartAngle + i * juce::MathConstants<float>::pi * 0.25f + 0.05f;
+        endAngle = rotaryStartAngle + (i + 1) * juce::MathConstants<float>::pi * 0.25f - 0.05f;
+        path.addCentredArc(bounds.getCentreX(), bounds.getCentreY(),
+                           bounds.getWidth() * 0.5f, bounds.getHeight() * 0.5f,
+                           0.0f, startAngle, endAngle, true);
+    }
+    g.setColour(juce::Colours::black.contrasting(0.3f));
+    g.strokePath(path, juce::PathStrokeType(arcThickness));
+    juce::Path clipPath;
+    clipPath.addPieSegment(bounds.expanded(arcThickness * 2), rotaryStartAngle, remappedAngle, 0.0f);
+    g.reduceClipRegion(clipPath);
+    g.setColour(juce::Colours::orange);
+    g.strokePath(path, juce::PathStrokeType(arcThickness));
+}
 
-    juce::Point<float> center{ bounds.getCentre() };
-    float radius{ width > height ? (bounds.getHeight() / 2) : (bounds.getWidth() / 2) };
-    juce::Path circumference;
-    circumference.addEllipse(bounds);
-    // Рисуем одиночный шип
-    juce::Point<float> peak{ center.translated(0.0f, -radius * 0.6f) };
-    // angle = 1.0f и 1.25f взятs при расчёте угла = длина дуги / радиус
-    // значения дуги и радиуса взяты относительно дизайна слайдера.
-    juce::Point<float> p1{ center.getPointOnCircumference(radius, -1.00f) };
-    juce::Point<float> p2{ center.getPointOnCircumference(radius, -1.25f) };
-    juce::Path spike;
-    spike.startNewSubPath(p1);
-    /* Для использования функции quadraticTo необходимо контрольная точка.
-    Поскольку она нужна для каждой дуги своя, необходимо её создание
-    привязать к точкам p1 и p2. Значения смещения для контрольных точек
-    подобраны с использованием JUCE_LIVE_CONSTANT. */
-    spike.quadraticTo(p1.withX(p1.x + radius * 0.35f).withY(p1.y - radius * 0.15f), peak);
-    spike.quadraticTo(p2.withX(p2.x + radius * 0.30f).withY(p2.y - radius * 0.25f), p2);
-    spike.addCentredArc(center.x, center.y, radius, radius, 0.0f, -1.25f, -1.00f);
-    spike.closeSubPath();
-    float correction = 0.35f;// JUCE_LIVE_CONSTANT(50) * 0.01;
-    g.addTransform(juce::AffineTransform::rotation(
-        juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
-    g.setColour(juce::Colours::darkgrey);
-    // размножаем шипы на 8 штук по всей окружности
-    for (int i = 1; i <= 8; ++i)
-    {
-        spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
-        g.fillPath(spike);
-    }
-    g.reduceClipRegion(circumference);
-    correction = 0.27f;// JUCE_LIVE_CONSTANT(27) * 0.01;
-    g.addTransform(juce::AffineTransform::rotation(
-        juce::jmap(sliderPosProportional, rotaryStartAngle * correction, rotaryEndAngle * correction), center.x, center.y));
-    g.addTransform(juce::AffineTransform::scale(1.7f - sliderPosProportional * 0.7f,
-                                                1.7f - sliderPosProportional * 0.7f,
-                                                center.x,
-                                                center.y));
-    // размножаем шипы на 8 штук по всей окружности
-    g.setColour(juce::Colours::white);
-    for (int i = 1; i <= 8; ++i)
-    {
-        spike.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f, center.x, center.y));
-        g.fillPath(spike);
-    }
+void XcytheLookAndFeel_v1::drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                                          bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    /* Переопределение данной функции необходимо по следующей причине.
+    При создании кнопки внутри окна AlertWindow, её конструирование происходит
+    на основе вызова функции paintButton(), задействующей внутри себя вызов
+    функций drawButtonBackground() и drawButtonText() класса LookAndFeel.
+    Для обычных кнопок в MainComponent данный метод, судя по всему,
+    не используется автоматически, либо используется с текущим LookAndFeel.
+    В случае AlertWindow происходит дублирование текста на кнопке из-за 
+    отрисовки текста внутри метода drawButtonBackground(). 
+    Судя по всему, кнопки внутри AlertWindow и MainComponent относятся к 
+    разным классам. Прописывание отрисовки текста в данной функции не 
+    влечёт за собой отрисовку текста на основных кнопках, но при этом 
+    добавляет его на кнопки AlertWindow. Поэтому имплементация этой 
+    функции пустая, а отрисовка текста перенесена в drawButtonInternal(),
+    что само по себе, вероятно, семантически не корректно. */
 }
 
 void XcytheLookAndFeel_v1::drawToggleButton(juce::Graphics& g, juce::ToggleButton& togglebutton,
                                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
-    float lineThickness{ 1.0f };
-    auto bounds{ togglebutton.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
-    juce::Path contour{ createFrame(bounds, FrameOrientation::None) };
-    // определяем цвет в зависимости от состояния кнопки
-    auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
-                        togglebutton.hasKeyboardFocus(true) ? 1.3f : 1.0f)
-                        .withMultipliedAlpha(togglebutton.getToggleState() ? 1.0f : 0.5f)};
-    if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
-    {
-        baseColor = baseColor.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
-    }
-    g.setColour(baseColor);
-    g.fillPath(contour);
-    g.setColour(juce::Colours::white);
-    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
-    g.setFont(font);
-    g.drawText(togglebutton.getButtonText(), bounds, juce::Justification::centred);
+    drawButtonInternal(g, togglebutton.getLocalBounds().toFloat(), FrameOrientation::None,togglebutton.getButtonText(),
+                       togglebutton.getToggleState(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
 }
 
-void XcytheLookAndFeel_v1::drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+void XcytheLookAndFeel_v1::drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
                                                 bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
-    float lineThickness{ 1.0f };
-    auto bounds{ button.getLocalBounds().toFloat().reduced(lineThickness * 0.5f) };
     auto orientation = FrameOrientation::None;
     if (button.getButtonText() == "<") { orientation = FrameOrientation::Left; }
     else if (button.getButtonText() == ">") { orientation = FrameOrientation::Right; }
+    drawButtonInternal(g, button.getLocalBounds().toFloat(), orientation, button.getButtonText(),
+                       button.getToggleState(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+}
+
+void XcytheLookAndFeel_v1::drawButtonInternal(juce::Graphics& g, juce::Rectangle<float> bounds,
+                                              FrameOrientation orientation, const juce::String& text, bool toggleState,
+                                              bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    float lineThickness{ 1.0f };
+    bounds.reduce(lineThickness * 0.5f, lineThickness * 0.5f);
     juce::Path contour{ createFrame(bounds, orientation) };
     // определяем цвет в зависимости от состояния кнопки
-    auto baseColor{ juce::Colours::darkgrey.withMultipliedSaturation(
-                        button.hasKeyboardFocus(true) ? 1.3f : 1.0f)
-                        .withMultipliedAlpha(button.getToggleState() ? 1.0f : 0.5f) };
+    auto baseColor{ juce::Colours::darkgrey.withAlpha(0.5f) };
     if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
     {
         baseColor = baseColor.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
@@ -112,12 +118,13 @@ void XcytheLookAndFeel_v1::drawButtonBackground(juce::Graphics& g, juce::Button&
     g.setColour(baseColor);
     g.fillPath(contour);
     g.setColour(juce::Colours::white);
-    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
     g.setFont(font);
-    g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
+    g.drawText(text, bounds, juce::Justification::centred);
+    if (toggleState) { g.setColour(juce::Colours::orange); }
+    g.strokePath(contour, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
 }
 
-void XcytheLookAndFeel_v1::drawComboBox(juce::Graphics& g, int width, int height, bool,
+void XcytheLookAndFeel_v1::drawComboBox(juce::Graphics& g, int, int, bool,
                   int, int, int, int, juce::ComboBox& box)
 {
     float lineThickness{ 1.0f };
@@ -139,9 +146,9 @@ void XcytheLookAndFeel_v1::positionComboBoxText(juce::ComboBox& box, juce::Label
 void XcytheLookAndFeel_v1::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
                                              const bool isSeparator, const bool isActive,
                                              const bool isHighlighted, const bool isTicked,
-                                             const bool hasSubMenu, const juce::String& text,
+                                             const bool, const juce::String& text,
                                              const juce::String& shortcutKeyText,
-                                             const juce::Drawable* icon, const juce::Colour* const textColourToUse)
+                                             const juce::Drawable*, const juce::Colour* const textColourToUse)
 {
     if (isSeparator)
     {
@@ -193,7 +200,46 @@ void XcytheLookAndFeel_v1::drawPopupMenuBackground(juce::Graphics& g, int width,
     #endif
 }
 
-juce::Path XcytheLookAndFeel_v1::createFrame(juce::Rectangle<float>& bounds, FrameOrientation orientation)
+void XcytheLookAndFeel_v1::drawAlertBox(juce::Graphics& g, juce::AlertWindow& alert,
+                                        const juce::Rectangle<int>& textArea, juce::TextLayout& textLayout)
+{
+    float cornerSize{ 6.0f };
+    auto bounds{ alert.getLocalBounds().toFloat() };
+    juce::ColourGradient gradient;
+    gradient.addColour(0.00, juce::Colours::black.contrasting(0.20f));
+    gradient.addColour(0.25, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(0.75, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(1.00, juce::Colours::black.contrasting(0.20f));
+    gradient.point1 = bounds.getBottomLeft();
+    gradient.point2 = bounds.getTopLeft();
+    g.setGradientFill(gradient);
+    g.fillRoundedRectangle(bounds, cornerSize);
+    gradient.clearColours();
+    g.setColour(juce::Colours::orange);
+    g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
+    g.setColour(juce::Colours::white);
+    bounds.reduce(10.0f, 10.0f);
+    textLayout.draw(g, bounds);
+}
+
+juce::Font XcytheLookAndFeel_v1::getTextButtonFont(juce::TextButton& button, int buttonHeight) { return getAlertWindowTitleFont(); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowTitleFont() { return font.withHeight(22.0f).withStyle(juce::Font::bold); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowMessageFont() { return font.withHeight(18.0f); }
+
+juce::Font XcytheLookAndFeel_v1::getAlertWindowFont() { return font.withHeight(16.0f); }
+
+int XcytheLookAndFeel_v1::getAlertWindowButtonHeight() { return 22; }
+
+juce::Array<int> XcytheLookAndFeel_v1::getWidthsForTextButtons(juce::AlertWindow& aw, const juce::Array<juce::TextButton*>& tb)
+{
+    juce::Array<int> buttonWidths;
+    for (int i = 0; i < tb.size(); ++i) { buttonWidths.add(100); }
+    return buttonWidths;
+}
+
+juce::Path XcytheLookAndFeel_v1::createFrame(const juce::Rectangle<float>& bounds, FrameOrientation orientation)
 {
     /* Метод для отрисовки 6-угольного контура кнопок и комбобоксов.
     Примечание! передаваемые баунды учитывают половину толщины линии,
@@ -324,7 +370,7 @@ void TransientFunctionGraph::paint(juce::Graphics& g)
         if (i == 0) { graph.startNewSubPath(normalizedX, normalizedY); }
         else { graph.lineTo(normalizedX, normalizedY); }
     }
-    g.setColour(juce::Colours::white);
+    g.setColour(juce::Colours::orange);
     g.strokePath(graph, juce::PathStrokeType(lineThickness, juce::PathStrokeType::curved));
 }
 
@@ -338,13 +384,15 @@ void TransientFunctionGraph::resized()
 //==============================================================================
 PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf), manager(pm)
 {
+    addAndMakeVisible(presetNameLabel); // определяется за полупрозрачным комбобоксом
+
     previousButton.setButtonText("<");
     previousButton.setLookAndFeel(&lnf);
     addAndMakeVisible(previousButton);
     previousButton.onClick = [&]()
     {
         const int index{ manager.previousPreset() };
-        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+        presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
     };
 
     nextButton.setButtonText(">");
@@ -353,25 +401,31 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
     nextButton.onClick = [&]()
     {
         const int index{ manager.nextPreset() };
-        presetMenu.setSelectedItemIndex(index, juce::NotificationType::dontSendNotification);
+        presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
     };
 
     updatePresetMenu();
-    presetMenu.setTextWhenNothingSelected("-init-");
-    presetMenu.setTextWhenNoChoicesAvailable("No saved presets");
+    presetMenu.setTextWhenNothingSelected("");
     const auto presetMenuIndex{ manager.presetList.indexOf(manager.currentPreset.toString()) };
-    if (presetMenuIndex == -1) { presetMenu.setSelectedItemIndex(presetMenuIndex); }
-    else { presetMenu.setSelectedItemIndex(presetMenuIndex + manager.presetListIdOffset); }    
+    juce::String initialPresetName;
+    if (presetMenuIndex == -1) { initialPresetName = juce::String("-init-"); }
+    else { initialPresetName = manager.currentPreset.toString(); }
+    presetNameLabel.setText(initialPresetName, juce::NotificationType::dontSendNotification);
     presetMenu.setLookAndFeel(&lnf);
     addAndMakeVisible(presetMenu);
-    presetMenu.onChange = [&]()
+    presetMenu.onChange = [this]()
     {
-        if (presetMenu.getSelectedId() == PresetMenuIDs::New)
+        switch (presetMenu.getSelectedId())
         {
+        case (PresetMenuIDs::NoSelect): break;
+        case (PresetMenuIDs::New):
+        {
+            presetNameLabel.setText(juce::String("-init-"), juce::NotificationType::dontSendNotification);
             presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
             manager.newPreset();
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Save)
+        case (PresetMenuIDs::Save):
         {
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please enter the name of the preset to save",
@@ -382,12 +436,12 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                     const auto fileToSave{ chooser.getResult() };
                     manager.savePreset(fileToSave.getFileNameWithoutExtension());
                     updatePresetMenu();
-                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                        manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
                 });
-
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Load)
+        case (PresetMenuIDs::Load):
         {
             fileChooser = std::make_unique<juce::FileChooser>(
                 "Please choose the preset to load",
@@ -397,22 +451,68 @@ PresetPanel::PresetPanel(juce::LookAndFeel& _lnf, PresetManager& pm) : lnf(_lnf)
                 {
                     const auto fileToLoad{ chooser.getResult() };
                     manager.loadPreset(fileToLoad.getFileNameWithoutExtension());
-                    presetMenu.setSelectedItemIndex(manager.presetList.indexOf(
-                        manager.currentPreset.toString()) + manager.presetListIdOffset);
+                    manager.currentPreset.setValue(manager.currentPreset.toString());
+                    presetNameLabel.setText(manager.currentPreset.toString(), juce::NotificationType::dontSendNotification);
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
                 });
+            break;
         }
-        else if (presetMenu.getSelectedId() == PresetMenuIDs::Delete)
+        case (PresetMenuIDs::Delete):
         {
+            if (presetNameLabel.getText() == "-init-")
+            {
+                presetMenu.setSelectedId(0);
+                return;
+            }
+            juce::MessageBoxOptions mbo
+            {
+                juce::MessageBoxOptions()
+                .withTitle("")
+                .withMessage("Do you want to delete current preset?")
+                .withIconType(juce::MessageBoxIconType::NoIcon)
+                .withAssociatedComponent(nullptr)
+            };
+            /* AlertWindow определяется как unique_ptr для того,
+            чтобы вызвать внутри лямбды ModalCallbackFunction.
+            ПРИМЕЧАНИЕ! Сначала применяется LookAndFeel, затем
+            добавляются кнопки, потому что функция addButton()
+            внутри вызывает текущий LookAndFeel, в котором определена
+            ширина кнопок для корректного размещения в окне. */
+            aw = std::make_unique<juce::AlertWindow>(mbo.getTitle(),
+                mbo.getMessage(),
+                mbo.getIconType(),
+                mbo.getAssociatedComponent());
+            aw->setLookAndFeel(&lnf);
+            aw->addButton("Yes", 1);
+            aw->addButton("No", 0);
+            aw->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
+                {
+                    presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
+                    if (result == 1)
+                    {
+                        manager.deletePreset(presetNameLabel.getText());
+                        updatePresetMenu();
+                        presetNameLabel.setText("-init-", juce::NotificationType::dontSendNotification);
+                    }
+                    aw->exitModalState(result);
+                    aw->setVisible(false);
+                }));
+            break;
+        }
+        default:
+        {
+            auto presetName{ presetMenu.getItemText(presetMenu.getSelectedItemIndex()) };
+            manager.loadPreset(presetName);
+            manager.currentPreset.setValue(presetName);
+            presetNameLabel.setText(presetName, juce::NotificationType::dontSendNotification);
             presetMenu.setSelectedId(0, juce::NotificationType::dontSendNotification);
-            manager.deletePreset(manager.currentPreset.toString());
-            updatePresetMenu();
+            break;
         }
-        else // пресеты
-        {
-            manager.loadPreset(presetMenu.getItemText(presetMenu.getSelectedItemIndex()));
-        }
+        } // end switch
     };
 }
+
+juce::Label* PresetPanel::getPresetNameLabel() { return &presetNameLabel; }
 
 void PresetPanel::updatePresetMenu()
 {
@@ -434,6 +534,22 @@ void PresetPanel::resized()
     previousButton.setBounds(bounds.removeFromLeft(componentWidth));
     presetMenu.setBounds(bounds.removeFromLeft(componentWidth * 4));
     nextButton.setBounds(bounds.removeFromLeft(componentWidth));
+    presetNameLabel.setBounds(presetMenu.getBounds());
+}
+//==============================================================================
+void Plate::paint(juce::Graphics& g)
+{
+    auto bounds{ getLocalBounds().toFloat() };
+    juce::ColourGradient gradient;
+    gradient.addColour(0.00, juce::Colours::black.contrasting(0.20f));
+    gradient.addColour(0.25, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(0.75, juce::Colours::black.contrasting(0.05f));
+    gradient.addColour(1.00, juce::Colours::black.contrasting(0.20f));
+    gradient.point1 = bounds.getBottomLeft();
+    gradient.point2 = bounds.getTopLeft();
+    g.setGradientFill(gradient);
+    g.fillRoundedRectangle(bounds, 6.0f);
+    gradient.clearColours();
 }
 //==============================================================================
 DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAudioProcessor& p)
@@ -443,6 +559,14 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     juce::Font font{ juce::Typeface::createSystemTypefaceFor(BinaryData::MagistralTT_ttf, BinaryData::MagistralTT_ttfSize) };
     font.setHeight(18.0f);
     addAndMakeVisible(presetPanel);
+    addAndMakeVisible(sliderPlate);
+    addAndMakeVisible(graphPlate);
+    addAndMakeVisible(pluginName);
+    addAndMakeVisible(version);
+
+    auto presetNameLabel{ presetPanel.getPresetNameLabel() };
+    presetNameLabel->setFont(font);
+    presetNameLabel->setJustificationType(juce::Justification::centred);
     //==================================================
     // clipperBox settings
     clipperBox.addItem("Hard Clip", hard);
@@ -540,6 +664,16 @@ DestructionAudioProcessorEditor::DestructionAudioProcessorEditor (DestructionAud
     bypassAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Bypass", bypassButton);
     linkAttach = std::make_unique<APVTS::ButtonAttachment>(audioProcessor.apvts, "Link", linkButton);
     clipperBoxAttach = std::make_unique<APVTS::ComboBoxAttachment>(audioProcessor.apvts, "Clipper Type", clipperBox);
+    //==================================================
+    // header settings
+    logo = juce::ImageCache::getFromMemory(BinaryData::Logo_transparent_png, BinaryData::Logo_transparent_pngSize);
+    font.setHeight(26.0f);
+    pluginName.setFont(font.withStyle(juce::Font::FontStyleFlags::italic));
+    pluginName.setText(juce::String(ProjectInfo::projectName).toUpperCase(), juce::NotificationType::dontSendNotification);
+    pluginName.setJustificationType(juce::Justification::centredLeft);
+    version.setFont(font.withHeight(FONT_HEIGHT).withStyle(juce::Font::FontStyleFlags::plain));
+    version.setText(juce::String("v.") + juce::String(ProjectInfo::versionString), juce::NotificationType::dontSendNotification);
+    version.setJustificationType(juce::Justification::centred);
 }
 
 DestructionAudioProcessorEditor::~DestructionAudioProcessorEditor()
@@ -558,38 +692,54 @@ void DestructionAudioProcessorEditor::paint (juce::Graphics& g)
     auto bounds{ getLocalBounds().toFloat() };
     juce::ColourGradient gradient;
     std::map<double, juce::Colour> colors;
-    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2)));
+    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2f)));
     colors.emplace(std::make_pair(0.5, juce::Colours::black));
-    colors.emplace(std::make_pair(1.0, juce::Colours::black.contrasting(0.2)));
+    colors.emplace(std::make_pair(1.0, juce::Colours::black.contrasting(0.2f)));
     drawBackground(g, gradient, bounds.removeFromTop(40), colors);
     colors.clear();
-    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2)));
+    colors.emplace(std::make_pair(0.0, juce::Colours::black.contrasting(0.2f)));
     colors.emplace(std::make_pair(0.2, juce::Colours::black));
     drawBackground(g, gradient, bounds, colors);
+    colors.clear();
+    colors.emplace(std::make_pair(0.0, juce::Colours::orange.withAlpha(0.0f)));
+    colors.emplace(std::make_pair(1.0, juce::Colours::orange.withAlpha(0.8f)));
+    drawBackground(g, gradient, bounds.withHeight(8.0f), colors);
+
+    juce::Rectangle<float> logoBounds{ 0.0f, 0.0f, 50.0f, 40.0f };
+    g.drawImage(logo, logoBounds, juce::RectanglePlacement::centred, false);
+
+    sliderPlateShadow = std::make_unique<juce::DropShadow>(juce::Colours::orange, 8, juce::Point<int>(5, 5));
+    graphPlateShadow  = std::make_unique<juce::DropShadow>(juce::Colours::orange, 8, juce::Point<int>(5, 5));
+    juce::Path path;
+    drawShadows(g, path, sliderPlate.getBounds().reduced(3), sliderPlateShadow);
+    drawShadows(g, path, graphPlate.getBounds().reduced(3), graphPlateShadow);
 }
 
 void DestructionAudioProcessorEditor::resized()
 {
-    int spacing{ 10 };
+    int spacing{ 5 };
     int buttonHeight{ 22 };
-    int componentWidth{ 100 };
+    int plateReduction{ 10 };
     auto bounds{ getLocalBounds() };
     auto headerBounds{ bounds.removeFromTop(40) }; // под лого и название
-    bounds.reduce(spacing, spacing);
-    outputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
-    bounds.removeFromRight(spacing);
-    clipSlider.setBounds(bounds.removeFromRight(componentWidth));
-    bounds.removeFromRight(spacing);
-    inputGainSlider.setBounds(bounds.removeFromRight(componentWidth));
-    bounds.removeFromRight(spacing);
-    graph.setBounds(bounds.removeFromTop(bounds.getHeight() - spacing - buttonHeight));
-    bounds.removeFromTop(spacing);
-    clipperBox.setBounds(bounds.removeFromLeft(componentWidth));
-    bounds.removeFromLeft(spacing);
-    bypassButton.setBounds(bounds.removeFromLeft(componentWidth));
-    bounds.removeFromLeft(spacing);
-    linkButton.setBounds(bounds.removeFromLeft(componentWidth));
-    presetPanel.setBounds(headerBounds.removeFromRight(getWidth() * 0.5f).reduced(9));
+    auto plateBounds{ bounds };    
+    sliderPlate.setBounds(plateBounds.removeFromRight(bounds.proportionOfWidth(0.5)).reduced(plateReduction));
+    graphPlate.setBounds(plateBounds.reduced(plateReduction));
+    // заполняем sliderPlate
+    auto staticBounds = plateBounds = sliderPlate.getBounds().reduced(spacing);
+    outputGainSlider.setBounds(plateBounds.removeFromRight(staticBounds.proportionOfWidth(0.33)).reduced(spacing));
+    clipSlider.setBounds(plateBounds.removeFromRight(staticBounds.proportionOfWidth(0.33)).reduced(spacing));
+    inputGainSlider.setBounds(plateBounds.reduced(spacing));
+    // заполняем graphPlate
+    staticBounds = plateBounds = graphPlate.getBounds().reduced(spacing);
+    graph.setBounds(plateBounds.removeFromTop(plateBounds.getHeight() - buttonHeight - 2 * spacing).reduced(spacing));
+    linkButton.setBounds(plateBounds.removeFromRight(staticBounds.proportionOfWidth(0.3)).reduced(spacing));
+    bypassButton.setBounds(plateBounds.removeFromRight(staticBounds.proportionOfWidth(0.3)).reduced(spacing));
+    clipperBox.setBounds(plateBounds.reduced(spacing));
+    presetPanel.setBounds(headerBounds.removeFromRight(headerBounds.proportionOfWidth(0.5)).reduced(9));
+    headerBounds.removeFromLeft(50 + 10); // под лого
+    pluginName.setBounds(headerBounds.removeFromLeft(200));
+    version.setBounds(headerBounds);
 }
 
 void DestructionAudioProcessorEditor::drawBackground(juce::Graphics& g,
@@ -603,4 +753,14 @@ void DestructionAudioProcessorEditor::drawBackground(juce::Graphics& g,
     g.setGradientFill(gradient);
     g.fillRect(bounds);
     gradient.clearColours();
+}
+
+void DestructionAudioProcessorEditor::drawShadows(juce::Graphics& g,
+                                                  juce::Path& path,
+                                                  const juce::Rectangle<int>& bounds,
+                                                  std::unique_ptr<juce::DropShadow>& shadow)
+{
+    path.addRoundedRectangle(bounds, 6.0f);
+    shadow->drawForPath(g, path);
+    path.clear();
 }
