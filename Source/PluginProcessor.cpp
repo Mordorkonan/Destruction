@@ -343,6 +343,34 @@ juce::AudioProcessorEditor* DestructionAudioProcessor::createEditor()
     return new DestructionAudioProcessorEditor (*this);
 }
 
+void DestructionAudioProcessor::updatePluginState()
+{
+    double newInputGainDb{ static_cast<double>(apvts.getRawParameterValue("Input Gain")->load()) };
+    double newOutputGainDb{ static_cast<double>(apvts.getRawParameterValue("Output Gain")->load()) };
+    double newClipGainDb{ static_cast<double>(apvts.getRawParameterValue("Clip")->load()) };
+    bool newBypass{ static_cast<bool>(apvts.getRawParameterValue("Bypass")->load()) };
+    bool newLink{ static_cast<bool>(apvts.getRawParameterValue("Link")->load()) };
+    int newClipperType{ static_cast<int>(apvts.getRawParameterValue("Clipper Type")->load()) };
+
+    gainController.setInputGainLevelInDb(newInputGainDb);
+    gainController.setOutputGainLevelInDb(newOutputGainDb);
+    gainController.setBypassState(newBypass);
+    clipHolder.setClipper(newClipperType);
+    clipHolder.getClipper()->updateMultiplier(newClipGainDb);
+    if (newLink)
+    {
+        if (gainController.getInputGainLevelInDb() < 0)
+        {
+            gainController.setInputGainLevelInDb(-gainController.getOutputGainLevelInDb());
+        }
+        else
+        {
+            gainController.setOutputGainLevelInDb(-gainController.getInputGainLevelInDb());
+        }
+    }
+    DBG("input gain = " << gainController.getInputGainLevelInDb() << " | outputGain = " << gainController.getOutputGainLevelInDb());
+}
+
 //==============================================================================
 void DestructionAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -374,9 +402,12 @@ void DestructionAudioProcessor::setStateInformation (const void* data, int sizeI
     if (xml != nullptr) // проверка обязательна, иначе вылезает jassert
     {
         juce::ValueTree tempTree{ juce::ValueTree::fromXml(*xml) };
-        if (tempTree.isValid()) { apvts.replaceState(tempTree); }
+        if (tempTree.isValid())
+        {
+            apvts.replaceState(tempTree);
+            updatePluginState();
+        }
     }
-    else { return; }
 }
 //==============================================================================
 void GainController::setInputGainLevelInDb(const double& value) { inputGainInDb = value; }
